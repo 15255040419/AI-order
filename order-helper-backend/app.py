@@ -443,17 +443,20 @@ def get_options():
     pay_methods = ["银行收款", "欠款计应收", "现金支付"]
     receipts = list(set(CONFIG_DATA.get("收款账户映射", {}).values()))
     
-    # 提取所有货品名供前端手动修正
+    # 提取所有货品名及完整元数据供前端联动
     all_products = []
+    all_products_data = []
     if STOCK_DATA is not None and not STOCK_DATA.empty:
         all_products = list(STOCK_DATA['货品名称'].dropna().unique())
+        all_products_data = STOCK_DATA.to_dict('records')
 
-    return jsonify({
+    return sanitize_data({
         "salesmen": salesmen,
         "customers": customers,
         "payMethods": pay_methods,
         "receipts": receipts,
-        "allProducts": all_products
+        "allProducts": all_products,
+        "allProductsData": all_products_data
     })
 
 

@@ -599,15 +599,55 @@
         };
 
         window.updateProduct = (orderId, productIndex, field, value) => {
-            appState.orders = appState.orders.map(o => {
-                if (o.id === orderId) {
-                    const products = [...o.products];
-                    products[productIndex] = { ...products[productIndex], [field]: value };
-                    return { ...o, products };
+            const order = appState.orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const products = [...order.products];
+            const p = products[productIndex];
+            const oldMatch = p.matchedName;
+            const searchName = p.name || p.searchName; // AI原始识别出的短语
+
+            products[productIndex] = { ...p, [field]: value };
+
+            // 🌟 核心增强：如果是修改货品名称，进行自动同步和学习
+            if (field === 'matchedName') {
+                // 1. 同步完整库存数据（条码、编号、规格等）
+                if (appState.globalOptions.allProductsData) {
+                    const info = appState.globalOptions.allProductsData.find(s => s['货品名称'] === value);
+                    if (info) products[productIndex].productInfo = info;
                 }
-                return o;
-            });
+                
+                // 2. 只有当用户确实改动了匹配结果，且有原始识别词时，才触发学习
+                if (value && value !== oldMatch && searchName) {
+                    learnCorrection(searchName, value);
+                }
+            }
+
+            appState.orders = appState.orders.map(o => o.id === orderId ? { ...o, products } : o);
+            render();
         };
+
+        // 🧠 智能化：将用户修正反馈给后台记录
+        async function learnCorrection(rawName, matchedName) {
+            try {
+                const res = await fetch(`${BACKEND_BASE_URL}/learn`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        type: 'product',
+                        rawName: rawName, 
+                        matchedName: matchedName 
+                    })
+                });
+                if (res.ok) {
+                    console.log(`💡 系统进步：成功记录映射 [${rawName}] -> [${matchedName}]`);
+                    // 刷新选项数据，以后识别更准
+                    fetchOptions();
+                }
+            } catch (e) {
+                console.error('学习记录失败', e);
+            }
+        }
 
         window.confirmDeleteOrder = (id) => {
             showConfirmDialog(
