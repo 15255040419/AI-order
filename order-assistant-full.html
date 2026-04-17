@@ -191,7 +191,10 @@
     <div id="modal-root"></div>
 
     <script>
-        const BACKEND_BASE_URL = 'http://127.0.0.1:5000/api';
+        // 🌟 动态适配后端地址 (支持局域网 IP 访问)
+        const BACKEND_BASE_URL = window.location.origin.includes('http') 
+            ? `${window.location.origin}/api` 
+            : 'http://127.0.0.1:5000/api';
 
         // Toast 通知
         const toast = {

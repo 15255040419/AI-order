@@ -530,9 +530,44 @@ def parse_endpoint():
     return jsonify(final_data)
 
 
+from flask import Flask, request, jsonify, send_file
+import os
+
+# ... (rest of imports)
+
+@app.route('/')
+def index():
+    """让内网用户通过IP直接访问网页界面"""
+    html_path = os.path.join(os.path.dirname(__file__), '..', 'order-assistant-full.html')
+    if os.path.exists(html_path):
+        return send_file(html_path)
+    return "找不到页面文件，请确保 order-assistant-full.html 在正确位置。"
+
 # --- 主程序运行 ---
 if __name__ == '__main__':
-    load_data() # 程序启动时，加载一次数据
-    # host='0.0.0.0' 让局域网内其他电脑可以访问
-    # port=5000 是端口号
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # 🌟 强力修复：先设定调试模式，再进行进程判定
+    app.debug = True 
+    
+    # 只有正式工作的子进程（或者关闭了重启器的模式）才允许加载数据和打印
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
+        load_data() 
+        
+        import socket
+        def get_ip():
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.connect(('8.8.8.8', 80))
+                ip = s.getsockname()[0]
+                s.close()
+                return ip
+            except: return '127.0.0.1'
+
+        local_ip = get_ip()
+        print("\n" + "="*50)
+        print(f"🚀 下单助手内网版已启动！")
+        print(f"🏠 本地访问: http://127.0.0.1:5000")
+        print(f"🌐 局域网访问: http://{local_ip}:5000 (同事请访问此地址)")
+        print("="*50 + "\n")
+
+    # 注意：这里不再传 debug=True，因为上面已经设过了
+    app.run(host='0.0.0.0', port=5000)
