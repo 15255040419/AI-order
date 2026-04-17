@@ -593,34 +593,53 @@
         };
 
         window.updateOrder = (id, field, value) => {
-            appState.orders = appState.orders.map(o =>
-                o.id === id ? { ...o, [field]: value } : o
-            );
+            appState.orders = appState.orders.map(o => {
+                if (o.id === id) {
+                    const newOrder = { ...o, [field]: value };
+                    // 🌟 核心逻辑：如果修改的是邮费，则自动更新合计
+                    if (field === 'freight') {
+                        const prodSum = o.products.reduce((sum, p) => sum + (parseFloat(p.price || 0) * parseInt(p.qty || 1)), 0);
+                        newOrder.total = prodSum + parseFloat(value || 0);
+                    }
+                    return newOrder;
+                }
+                return o;
+            });
+            render();
         };
 
         window.updateProduct = (orderId, productIndex, field, value) => {
-            const order = appState.orders.find(o => o.id === orderId);
-            if (!order) return;
+            appState.orders = appState.orders.map(o => {
+                if (o.id === orderId) {
+                    const products = [...o.products];
+                    const p = { ...products[productIndex], [field]: value };
+                    
+                    // 1. 同步库存元数据
+                    if (field === 'matchedName') {
+                        const oldMatch = products[productIndex].matchedName;
+                        const searchName = p.name || p.searchName;
+                        if (appState.globalOptions.allProductsData) {
+                            const info = appState.globalOptions.allProductsData.find(s => s['货品名称'] === value);
+                            if (info) p.productInfo = info;
+                        }
+                        if (value && value !== oldMatch && searchName) {
+                            learnCorrection('product', searchName, value);
+                        }
+                    }
 
-            const products = [...order.products];
-            const p = products[productIndex];
-            const oldMatch = p.matchedName;
-            const searchName = p.name || p.searchName; 
+                    products[productIndex] = p;
+                    const newOrder = { ...o, products };
 
-            products[productIndex] = { ...p, [field]: value };
-
-            if (field === 'matchedName') {
-                if (appState.globalOptions.allProductsData) {
-                    const info = appState.globalOptions.allProductsData.find(s => s['货品名称'] === value);
-                    if (info) products[productIndex].productInfo = info;
+                    // 🌟 核心逻辑：如果修改的是价格或数量，则自动更新合计
+                    if (field === 'price' || field === 'qty' || field === 'matchedName') {
+                        const prodSum = products.reduce((sum, item) => sum + (parseFloat(item.price || 0) * parseInt(item.qty || 1)), 0);
+                        newOrder.total = prodSum + parseFloat(o.freight || 0);
+                    }
+                    
+                    return newOrder;
                 }
-                
-                if (value && value !== oldMatch && searchName) {
-                    learnCorrection('product', searchName, value);
-                }
-            }
-
-            appState.orders = appState.orders.map(o => o.id === orderId ? { ...o, products } : o);
+                return o;
+            });
             render();
         };
 
