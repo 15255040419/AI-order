@@ -381,52 +381,54 @@ def process_parsed_data(ai_result):
     # 快递计算
     final_result["express"] = select_express(final_result["address"], final_result["products"], raw_text=raw_text)
 
-    # 客户匹配
+    # 客户智能匹配与候选项
+    final_result["customer_candidates"] = []
     if CUSTOMER_DATA is not None and not CUSTOMER_DATA.empty:
-        search_phone = str(final_result['phone'])
-        c_match = CUSTOMER_DATA[CUSTOMER_DATA['联系电话'].astype(str).str.contains(search_phone, na=False)]
-        if c_match.empty and final_result['account']:
-            c_match = CUSTOMER_DATA[CUSTOMER_DATA['客户账号'].str.contains(final_result['account'], na=False)]
+        search_phone = str(final_result.get('phone', ''))
+        c_match = CUSTOMER_DATA[CUSTOMER_DATA['联系电话'].astype(str).str.contains(search_phone, na=False)] if search_phone else pd.DataFrame()
         
+        # 记忆模式
+        customer_map = CONFIG_DATA.get("客户特殊映射", {})
+        if final_result.get("account") in customer_map:
+            target_acc = customer_map[final_result["account"]]
+            c_match = CUSTOMER_DATA[CUSTOMER_DATA['客户账号'] == target_acc]
+
         if not c_match.empty:
             final_result["customer"] = c_match.iloc[0].to_dict()
+            final_result["account"] = final_result["customer"].get("客户账号", "")
+        else:
+            candidates = []
+            receiver_name = final_result.get("receiver", "")
+            for _, row in CUSTOMER_DATA.iterrows():
+                c_name, c_acc = str(row.get('客户名称', '')), str(row.get('客户账号', ''))
+                if receiver_name and (receiver_name in c_name or receiver_name in c_acc):
+                    candidates.append({"客户账号": c_acc, "客户名称": c_name})
+            final_result["customer_candidates"] = candidates[:5]
 
     # 备注补充
-    prod_note = " ".join([f"{p['searchName']}*{p['qty']}" for p in final_result["products"]])
-    final_result["note"] = f"{prod_note} {final_result['note']}".strip()
+    prod_note = " ".join([f"{p['searchName']}*{p['qty']}" for p in final_result["products"] if p.get('searchName')])
+    final_result["note"] = f"{prod_note} {final_result.get('note') or ''}".strip()
 
-    return final_result
-
-
+    return sanitize_data(final_result)
 
 
-# --- API 路由（程序入口） ---
+
+
+# --- API 路由 ---
 @app.route('/api/learn', methods=['POST'])
 def learn_endpoint():
-    """学习接口：保存用户的手动修正映射"""
     try:
         data = request.json
-        raw_name = data.get("rawName") # 用户输入的原始名
-        matched_name = data.get("matchedName") # 库中真实的货品名称
-        
-        if not raw_name or not matched_name:
-            return jsonify({"status": "error", "message": "缺少参数"}), 400
-            
-        # 更新配置
-        if "货品特殊映射" not in CONFIG_DATA:
-            CONFIG_DATA["货品特殊映射"] = {}
-        
-        # 记录映射
-        CONFIG_DATA["货品特殊映射"][raw_name] = matched_name
-        
-        # 保存到本地文件以持久化
+        l_type, raw, matched = data.get("type", "product"), data.get("rawName"), data.get("matchedName")
+        if not raw or not matched: return jsonify({"status": "error"}), 400
+        key = "货品特殊映射" if l_type == "product" else "客户特殊映射"
+        if key not in CONFIG_DATA: CONFIG_DATA[key] = {}
+        CONFIG_DATA[key][raw] = matched
         with open('data/配置规则.json', 'w', encoding='utf-8') as f:
             json.dump(CONFIG_DATA, f, ensure_ascii=False, indent=4)
-            
-        print(f"💡 系统已自动进步：学习了映射 {raw_name} -> {matched_name}")
-        return jsonify({"status": "ok", "message": "进步成功"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        print(f"💡 系统进步：[{l_type}] {raw} -> {matched}")
+        return jsonify({"status": "ok"})
+    except Exception as e: return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/options', methods=['GET'])
 def get_options():

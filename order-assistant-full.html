@@ -566,29 +566,29 @@
             return card;
         }
 
-        // 全局函数
+        // --- 全局交互函数 ---
+        
         window.updateCustomerLink = async (orderId, matchedAccountCode) => {
             const order = appState.orders.find(o => o.id === orderId);
             if (!order) return;
 
-            // 如果原来的识别名称存在且不等于新选的账号，触发学习
+            // 如果原本识别出的账号不等于新选的账号，则触发学习
             if (order.account && order.account !== matchedAccountCode) {
-                console.log(`💡 学习中: ${order.account} -> ${matchedAccountCode}`);
+                console.log(`🧠 系统正在同步学习客户关联: ${order.account} -> ${matchedAccountCode}`);
                 try {
-                    await fetch('http://127.0.0.1:5000/api/learn', {
+                    await fetch(`${BACKEND_BASE_URL}/learn`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             type: 'customer',
-                            rawName: order.account, // AI识别出的原始名字
-                            matchedName: matchedAccountCode // 用户手动选的名字
+                            rawName: order.account, 
+                            matchedName: matchedAccountCode
                         })
                     });
-                } catch (err) {
-                    console.error('学习同步失败:', err);
+                } catch (e) {
+                    console.error('学习同步失败:', e);
                 }
             }
-
             updateOrder(orderId, 'account', matchedAccountCode);
         };
 
@@ -605,21 +605,18 @@
             const products = [...order.products];
             const p = products[productIndex];
             const oldMatch = p.matchedName;
-            const searchName = p.name || p.searchName; // AI原始识别出的短语
+            const searchName = p.name || p.searchName; 
 
             products[productIndex] = { ...p, [field]: value };
 
-            // 🌟 核心增强：如果是修改货品名称，进行自动同步和学习
             if (field === 'matchedName') {
-                // 1. 同步完整库存数据（条码、编号、规格等）
                 if (appState.globalOptions.allProductsData) {
                     const info = appState.globalOptions.allProductsData.find(s => s['货品名称'] === value);
                     if (info) products[productIndex].productInfo = info;
                 }
                 
-                // 2. 只有当用户确实改动了匹配结果，且有原始识别词时，才触发学习
                 if (value && value !== oldMatch && searchName) {
-                    learnCorrection(searchName, value);
+                    learnCorrection('product', searchName, value);
                 }
             }
 
@@ -627,26 +624,16 @@
             render();
         };
 
-        // 🧠 智能化：将用户修正反馈给后台记录
-        async function learnCorrection(rawName, matchedName) {
+        async function learnCorrection(type, rawName, matchedName) {
             try {
-                const res = await fetch(`${BACKEND_BASE_URL}/learn`, {
+                await fetch(`${BACKEND_BASE_URL}/learn`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        type: 'product',
-                        rawName: rawName, 
-                        matchedName: matchedName 
-                    })
+                    body: JSON.stringify({ type, rawName, matchedName })
                 });
-                if (res.ok) {
-                    console.log(`💡 系统进步：成功记录映射 [${rawName}] -> [${matchedName}]`);
-                    // 刷新选项数据，以后识别更准
-                    fetchOptions();
-                }
-            } catch (e) {
-                console.error('学习记录失败', e);
-            }
+                console.log(`💡 系统进步 [${type}]：记录了 ${rawName} -> ${matchedName}`);
+                fetchOptions();
+            } catch (e) { console.error('Learning Failed', e); }
         }
 
         window.confirmDeleteOrder = (id) => {
