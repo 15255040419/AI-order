@@ -99,10 +99,10 @@ def parse_order_with_ai(text):
 
 识别规则：
 1. 信息结构：[收件人/电话] [地址] [详情*数量 价格] [已付/未付 收款账户] [系统录 客户账号] [业务员代码]。
-2. 基础信息：从文本开头提取 姓名、手机、地址。地址识别要全，补全省市区逻辑。
+2. 基础信息：从文本最开头提取姓名作为收件人（如“小米[1783]”中“小米[1783]”即为收件人，保留方括号）。抓取手机、地址时也要保留原样数字。
 3. 货品与算式：识别 "货品*数量 价格" 或 "名称*数量=总价"。注意防污染：若货品名含星号（如 57*50 纸），严禁将数量后缀（如 *10）带入 name。例："57*50*10卷纸" 解析为 name: "57*50卷纸", qty: 10。
 4. 收款：找到 "已付" 关键字，提取其紧随其后的账户名（如 "已付农商成" 账户为 "农商成"）。
-5. 客户识别：查找“系统录”关键字，其后的文字即为客户账号。必须精准抓取名字（如“罗金舟”）。
+5. 客户识别：查找“系统录”关键字，其后的文字即为客户账号。严禁将姓名、地址或电话后方中括号里的数字（如 [1783]）误认为客户账号。若无“系统录”字样，customer_account 必须留空。
 6. 业务员验证：只有在文中出现括号内的字母时才识别（例如：(L), (W)）。严禁凭空猜测或从杂碎文字中关联。若无括号包裹代码，salesman_code 必须为空。
 7. 返回格式必须是 JSON，字段名参考前述说明。
 """
@@ -167,7 +167,18 @@ def find_product_match(name):
     c_search_name = clean_str(name)
     for key, val in special_map.items():
         if c_search_name == clean_str(key):
-            return {"matchedName": val, "matchType": "matched", "source": "记忆学习"}
+            # 找到映射名后，去库存表里精确捞一下元数据
+            m_row = STOCK_DATA[STOCK_DATA['货品名称'].astype(str).str.strip() == str(val).strip()]
+            if not m_row.empty:
+                best = m_row.iloc[0].to_dict()
+                return {**best, "matchedName": val, "matchType": "matched", "source": "记忆映射+库存同步"}
+            return {"matchedName": val, "matchType": "matched", "source": "仅记忆映射(库中未找到)"}
+
+    # 1. 尝试完全匹配 (原样比对)
+    exact_match = STOCK_DATA[STOCK_DATA['货品名称'].astype(str).str.strip() == name.strip()]
+    if not exact_match.empty:
+        best = exact_match.iloc[0].to_dict()
+        return {**best, "matchedName": best.get('货品名称'), "matchType": "matched", "source": "精确匹配"}
 
     # 2. 评分机制
     candidates = []
@@ -191,7 +202,16 @@ def find_product_match(name):
     if candidates:
         # 按评分由高到低排序
         candidates.sort(key=lambda x: x['score'], reverse=True)
+        # 增加逻辑：如果得分最高项相似度够高，就采用它
         best = candidates[0]['data']
+        # 为了让 57*50纸 这种能匹配到含此关键字的项目，做一次强包含检查
+        if candidates[0]['score'] < 0.8:
+            for cand in candidates:
+                c_name = str(cand['data'].get('货品名称', ''))
+                if name in c_name or c_name in name:
+                    best = cand['data']
+                    break
+
         return {
             **best, 
             "matchedName": best.get('货品名称'), 
@@ -265,69 +285,92 @@ def select_express(address, products, raw_text=""):
     normal_rules = express_rules.get("普通货品", {}).get("重量分段", {})
     return normal_rules.get(weight_seg, {}).get(province, "中通（渠道）")
 
-def process_parsed_data(ai_result):
+def process_parsed_data(ai_result, raw_text):
     """对AI返回的结果进行二次处理和数据补充"""
-    raw_text = ai_result.get("raw", "")
+    # 🌟 核心：直接使用传入的原始文本进行正则匹配，不再依赖 AI 返回的 raw 字段
     
-    # 1. 业务员验证 (必须在原文中有括号包裹的代码，如 (L))
+    # 1. 业务员验证 (从全文或系统录行末尾识别)
     salesman_code = str(ai_result.get("salesman_code", "")).strip().upper()
     salesman_map = CONFIG_DATA.get("业务员映射", {})
     
-    # 二次验证逻辑：原文中必须包含类似 (L) 或 (W) 的字样才接受
+    # 增强逻辑：如果原文中有 (W), （W）, (W-新) 等格式，强行提炼
     import re
-    actual_code = None
-    if salesman_code:
-        # 支持各种形式的括号，包括中文/英文、单双括号 (W), （W）, （W））
-        if re.search(rf'[\(\（]{salesman_code}[\)\）]+', raw_text, re.I):
-            actual_code = salesman_code
+    actual_code = salesman_code
+    # 如果AI没抓到，正则强行在“系统录”最后补位抓取
+    if not actual_code:
+        m = re.search(r'[\(\（]([A-Z0-9]+)[\)\）]\s*$', raw_text, re.M)
+        if m: actual_code = m.group(1).upper()
             
     salesman = salesman_map.get(actual_code, CONFIG_DATA.get("默认业务员", "未分配"))
 
-    # 2. 客户账号清洗与正则兜底
-    # 优先从原文正则寻找“系统录”后面的名字，因为AI抓取的可能带杂质（如括号代码）
+    # 2. 客户账号提取 (强力锁定“系统录”后面的名字)
     customer_account = ""
-    match = re.search(r'系统录\s*([^\s\n\（\(]+)', raw_text)
+    # 增强版正则：穿透所有空格，抓取到第一个分隔符之前的所有文字
+    match = re.search(r'系统录[:：\s]*([^\s\n\（\(\[\]]+)', raw_text)
     if match:
         customer_account = match.group(1).strip()
-        customer_account = customer_account.replace('“', '').replace('”', '').replace('"', '')
+        # 剥离杂质
+        customer_account = re.sub(r'[“”"\[\]]', '', customer_account)
     
-    # 如果正则没抓到，再用AI抓的结果作为补充
+    # 只有当正则完全没抓到时，才看AI的结果，但 AI 的结果必须经过 1783 过滤
     if not customer_account:
-        customer_account = str(ai_result.get("customer_account", "")).strip()
+        ai_acc = str(ai_result.get("customer_account", "")).strip()
+        if not (ai_acc.isdigit() and f"[{ai_acc}]" in raw_text):
+            customer_account = ai_acc
     
-    # 清洗：如果带了 (W) 或 （W）之类的后缀，强行剥离
+    # 彻底清除客户名字里残留的业务代码后缀
     customer_account = re.sub(r'[\(\（].*?[\)\）]+', '', customer_account).strip()
 
-    # 2.1 客户账号匹配 (从档案里找真正的账号ID)
-    if customer_account and CUSTOMER_DATA is not None and not CUSTOMER_DATA.empty:
-        # 尝试查找客户名称、联系人或账号匹配
-        search_phone = str(ai_result.get("phone", "")).strip()
+    # 2.1 客户账号匹配
+    if CUSTOMER_DATA is not None and not CUSTOMER_DATA.empty:
+        p_phone = str(ai_result.get('phone', ''))
+        # 尝试通过手机号匹配
+        c_match = CUSTOMER_DATA[CUSTOMER_DATA['联系电话'].astype(str).str.contains(p_phone, na=False)] if p_phone else pd.DataFrame()
         
-        # 使用 regex=False 避免符号报错
-        cust_match = CUSTOMER_DATA[
-            (CUSTOMER_DATA['客户名称'].str.contains(customer_account, na=False, regex=False)) |
-            (CUSTOMER_DATA['联系人'].str.contains(customer_account, na=False, regex=False)) |
-            (CUSTOMER_DATA['客户账号'].str.contains(customer_account, na=False, regex=False))
-        ]
-        
-        # 如果名称没找到，尝试通过电话找
-        if cust_match.empty and search_phone:
-            cust_match = CUSTOMER_DATA[CUSTOMER_DATA['联系电话'].astype(str).str.contains(search_phone, na=False, regex=False)]
+        if c_match.empty:
+            cust_map = CONFIG_DATA.get("客户特殊映射", {})
+            if customer_account in cust_map:
+                c_match = CUSTOMER_DATA[CUSTOMER_DATA['客户账号'] == cust_map[customer_account]]
 
-        if not cust_match.empty:
-            customer_account = cust_match.iloc[0]['客户账号']
+        if not c_match.empty:
+            final_customer = c_match.iloc[0].to_dict()
+            customer_account = final_customer.get("客户账号", "")
+        else:
+            # 生成候选
+            cands = []
+            recv = ai_result.get("receiver", "")
+            for _, row in CUSTOMER_DATA.iterrows():
+                c_name, c_acc = str(row.get('客户名称', '')), str(row.get('客户账号', ''))
+                if recv and (recv in c_name or recv in c_acc):
+                    cands.append({"客户账号": c_acc, "客户名称": c_name})
+            final_customer = None
+            customer_candidates = cands[:5]
+    else:
+        final_customer = None
+        customer_candidates = []
 
-    # 3. 收款账户映射与清洗
-    raw_account = str(ai_result.get("payment_account", "")).strip()
-    if raw_account.startswith("已付"):
-        raw_account = raw_account[2:].strip()
+    # 3. 支付状态与收款账户逻辑 (严格遵循用户业务规则)
+    payment_status = ai_result.get("payment_status", "未付")
+    pay_method = "欠款计应收"
+    receipt = "" # 默认不填
+
+    if payment_status == "已付":
+        pay_method = "银行收款"
+        raw_account = str(ai_result.get("payment_account", "")).strip()
+        if raw_account.startswith("已付"):
+            raw_account = raw_account[2:].strip()
+        # 剥离后缀
+        raw_account = re.sub(r'[\(\（].*?[\)\）]+', '', raw_account).strip()
         
-    receipt_map = CONFIG_DATA.get("收款账户映射", {})
-    receipt = raw_account
-    for key, val in receipt_map.items():
-        if key in raw_account or raw_account in key:
-            receipt = val
-            break
+        receipt_map = CONFIG_DATA.get("收款账户映射", {})
+        receipt = raw_account
+        for key, val in receipt_map.items():
+            if key in raw_account or raw_account in key:
+                receipt = val
+                break
+    else:
+        # 如果是“未付”，强制收款账户为空
+        receipt = ""
 
     final_result = {
         "phone": ai_result.get("phone", ""),
@@ -339,7 +382,7 @@ def process_parsed_data(ai_result):
         "note": ai_result.get("extra_note", ""),
         "account": customer_account,
         "salesman": salesman,
-        "payMethod": "银行收款" if ai_result.get("payment_status") == "已付" else "欠款计应收",
+        "payMethod": pay_method,
         "receipt": receipt,
         "salesChannel": CONFIG_DATA.get("销售渠道", "仝心科技线下批发"),
         "express": "",
@@ -381,29 +424,11 @@ def process_parsed_data(ai_result):
     # 快递计算
     final_result["express"] = select_express(final_result["address"], final_result["products"], raw_text=raw_text)
 
-    # 客户智能匹配与候选项
-    final_result["customer_candidates"] = []
-    if CUSTOMER_DATA is not None and not CUSTOMER_DATA.empty:
-        search_phone = str(final_result.get('phone', ''))
-        c_match = CUSTOMER_DATA[CUSTOMER_DATA['联系电话'].astype(str).str.contains(search_phone, na=False)] if search_phone else pd.DataFrame()
-        
-        # 记忆模式
-        customer_map = CONFIG_DATA.get("客户特殊映射", {})
-        if final_result.get("account") in customer_map:
-            target_acc = customer_map[final_result["account"]]
-            c_match = CUSTOMER_DATA[CUSTOMER_DATA['客户账号'] == target_acc]
-
-        if not c_match.empty:
-            final_result["customer"] = c_match.iloc[0].to_dict()
-            final_result["account"] = final_result["customer"].get("客户账号", "")
-        else:
-            candidates = []
-            receiver_name = final_result.get("receiver", "")
-            for _, row in CUSTOMER_DATA.iterrows():
-                c_name, c_acc = str(row.get('客户名称', '')), str(row.get('客户账号', ''))
-                if receiver_name and (receiver_name in c_name or receiver_name in c_acc):
-                    candidates.append({"客户账号": c_acc, "客户名称": c_name})
-            final_result["customer_candidates"] = candidates[:5]
+    # 最终结果整合
+    final_result["customer"] = final_customer
+    final_result["customer_candidates"] = customer_candidates
+    if final_customer:
+        final_result["account"] = final_customer.get("客户账号", "")
 
     # 备注补充
     prod_note = " ".join([f"{p['searchName']}*{p['qty']}" for p in final_result["products"] if p.get('searchName')])
@@ -495,7 +520,7 @@ def parse_endpoint():
     print(f"✅ AI 初步解析成功: {ai_result}")
 
     # 2. 对AI结果进行后处理和数据补充
-    final_data = process_parsed_data(ai_result)
+    final_data = process_parsed_data(ai_result, order_text)
     final_data['raw'] = order_text
     
     # 核心修复：清理所有可能来自 Excel 的 NaN 值，防止前端解析 JSON 报错
