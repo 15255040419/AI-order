@@ -182,6 +182,19 @@
                 transform: scale(1);
             }
         }
+
+        /* 🌟 新增：呼吸灯红色渐变动画 (用于查重) */
+        @keyframes breathing-red {
+            0% { border-color: #ef4444; box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
+            50% { border-color: #dc2626; box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), inset 0 0 10px rgba(239, 68, 68, 0.2); }
+            100% { border-color: #ef4444; box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
+        }
+
+        .duplicate-highlight {
+            animation: breathing-red 2s infinite ease-in-out !important;
+            border-width: 2px !important;
+            background-color: #fff1f2 !important; /* 浅淡红背景辅助辨识 */
+        }
     </style>
 </head>
 
@@ -419,9 +432,9 @@
         }
 
         // 订单卡片
-        function OrderCard(order, index, globalOptions, onUpdate, onDelete) {
+        function OrderCard(order, index, globalOptions, onUpdate, onDelete, isDuplicate = false) {
             const card = document.createElement('div');
-            card.className = 'bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow card-animate';
+            card.className = `bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all card-animate ${isDuplicate ? 'duplicate-highlight shadow-xl shadow-red-200' : ''}`;
             card.style.height = 'fit-content';
 
             if (order.loading) {
@@ -776,8 +789,8 @@
                 note: '',
             }));
 
-            // 2. 先把占位符塞进列表（在最前面）
-            appState.orders = [...newOrders, ...appState.orders];
+            // 2. 把占位符按序追加到列表末尾
+            appState.orders = [...appState.orders, ...newOrders];
             render();
 
             // 3. 并发解析每一单
@@ -867,6 +880,13 @@
             const root = document.getElementById('root');
             root.innerHTML = '';
 
+            // 查重逻辑
+            const phoneCounts = {};
+            appState.orders.forEach(o => {
+                const p = String(o.phone || '').trim();
+                if (p) phoneCounts[p] = (phoneCounts[p] || 0) + 1;
+            });
+            
             // Header
             const header = document.createElement('header');
             header.className = 'border-b border-gray-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50';
@@ -910,7 +930,8 @@
                 const grid = document.createElement('div');
                 grid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-4';
                 appState.orders.forEach((order, index) => {
-                    grid.appendChild(OrderCard(order, index, appState.globalOptions, updateOrder, confirmDeleteOrder));
+                    const isDuplicate = order.phone && phoneCounts[String(order.phone).trim()] > 1;
+                    grid.appendChild(OrderCard(order, index, appState.globalOptions, updateOrder, confirmDeleteOrder, isDuplicate));
                 });
                 contentInner.appendChild(grid);
             }
