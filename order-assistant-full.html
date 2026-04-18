@@ -541,10 +541,18 @@
                     </div>
                     <div class="space-y-1">
                         <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">快递</label>
-                        <select onchange="updateOrder(${order.id}, 'express', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-sm font-bold text-gray-700">
-                            <option value="">自动识别中...</option>
-                            ${(globalOptions.expressOptions || ['顺丰速运', '圆通（渠道）', '中通（渠道）', '申通快递', '韵达快递', '邮政EMS', '德邦特惠', '极兔渠道（新）', '工厂代发', '工厂直发']).map(e => `<option value="${e}" ${order.express === e ? 'selected' : ''}>${e}</option>`).join('')}
-                        </select>
+                        <div class="flex flex-col gap-1">
+                            <select onchange="updateOrder(${order.id}, 'express', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-sm font-bold text-gray-700">
+                                <option value="">-- 请选择快递 --</option>
+                                ${(globalOptions.expressOptions || []).map(e => `<option value="${e}" ${order.express === e ? 'selected' : ''}>${e}</option>`).join('')}
+                            </select>
+                            ${order.expressReason ? `
+                                <div class="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 flex items-center gap-1" title="${order.expressReason}">
+                                    <span class="opacity-70">依据:</span>
+                                    <span class="font-medium truncate">${order.expressReason}</span>
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
                 </div>
                 <div class="space-y-1.5">
@@ -554,9 +562,12 @@
                 ${order.products && order.products.length > 0 ? `
                     <div class="space-y-2">
                         <button onclick="toggleProducts(${order.id})" class="w-full flex items-center justify-between h-9 px-3 hover:bg-blue-50 rounded-md transition-colors">
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 overflow-hidden mr-4">
                                 ${icons.package}
-                                <span class="text-xs font-medium text-gray-700">货品清单 (${order.products.length} 件)</span>
+                                <span class="text-xs font-medium text-gray-700 whitespace-nowrap">货品清单 (${order.products.length} 件):</span>
+                                <span class="text-[11px] text-blue-600 font-bold truncate">
+                                    ${order.products.map(p => `${p.matchedName || p.searchName} * ${p.qty}`).join(', ')}
+                                </span>
                             </div>
                             <span id="chevron-${order.id}">${icons.chevronDown}</span>
                         </button>

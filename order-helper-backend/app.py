@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import pandas as pd
 import requests
@@ -6,6 +7,7 @@ import math
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import logging
+import difflib
 
 # --- 配置日志 ---
 logging.basicConfig(
@@ -27,10 +29,14 @@ CUSTOMER_DATA = pd.DataFrame()
 CONFIG_DATA = {}
 ZHIPU_API_KEY = "7bd6e3eca730448c8ffac4c786cd092a.XfOv2YlnrDp44XO5" # <-- 在这里替换成你的API Key
 
-# --- 数据加载函数 ---
+# 全局变量定义
+EXPRESS_RULES = {}
+EXPRESS_OPTIONS = []
+EXPRESS_TABLE = {}  # 🌟 新增：省份品类重量映射表
+
 def load_data():
     """在程序启动时加载所有数据文件到内存中"""
-    global STOCK_DATA, COMBO_DATA, CUSTOMER_DATA, CONFIG_DATA
+    global STOCK_DATA, COMBO_DATA, CUSTOMER_DATA, CONFIG_DATA, EXPRESS_RULES, EXPRESS_OPTIONS
     
     data_path = 'data'
     print("--- 正在加载数据文件 ---", flush=True)
@@ -54,8 +60,39 @@ def load_data():
         
         with open(os.path.join(data_path, '配置规则.json'), 'r', encoding='utf-8') as f:
             CONFIG_DATA = json.load(f)
+            EXPRESS_RULES = CONFIG_DATA.get("快递规则", {})
         print("[OK] 配置规则.json 加载成功", flush=True)
         
+        # 🌟 动态加载快递选项 (来自快递表格.xls)
+        ex_path = 'data/快递表格.xls'
+        if os.path.exists(ex_path):
+            df_ex = pd.read_excel(ex_path, header=None)
+            
+            # 1. 提取下拉框选项
+            cols_idx = [1, 2, 3, 4, 5, 6]
+            opts = set()
+            for c_idx in cols_idx:
+                opts.update(df_ex.iloc[2:, c_idx].dropna().astype(str).unique())
+            noise = ['1.01-2KG', '2kg-5kg', '5kg以上', '不按重量只按地区', '只要是称都发德邦', 'nan']
+            EXPRESS_OPTIONS = sorted([x for x in opts if x.strip() and x not in noise])
+            
+            # 2. 🌟 构建核心分拣映射表 (EXPRESS_TABLE)
+            # 结构: { "浙江": { "打印机_小": "中通", ... } }
+            for i in range(2, len(df_ex)):
+                row = df_ex.iloc[i]
+                prov = str(row[0]).strip().replace('省', '').replace('市', '')
+                if not prov or prov == 'nan' or len(prov) > 5: continue
+                
+                EXPRESS_TABLE[prov] = {
+                    "打印机_小": str(row[1]).strip(),
+                    "打印机_中": str(row[2]).strip(),
+                    "打印机_大": str(row[3]).strip(),
+                    "收银机": str(row[4]).strip(),
+                    "一体称": str(row[5]).strip(),
+                    "其他": str(row[6]).strip()
+                }
+            logger.info(f"成功加载快递分拣引擎：已缓存 {len(EXPRESS_TABLE)} 个省份规则")
+
         # 将货品列表存入配置，方便后续使用
         CONFIG_DATA['internal_product_list'] = all_products
         print(f"--- 共整合 {len(all_products)} 种唯一货品名称/规格作为AI参考 ---", flush=True)
@@ -166,9 +203,13 @@ def find_product_match(name):
         t_spec_no = str(row.get('规格编号', '')).strip()
         t_spec = str(row.get('规格', '')).strip()
         
-        # 🌟 强力逻辑：如果原文直接包含了库存中的名称或编号，直接给满分并提前返回
+        # 🌟 强力逻辑：如果原文直接包含了库存中的名称或编号
         if (t_name and t_name in name) or (t_spec_no and t_spec_no in name):
-             return {**row.to_dict(), "matchedName": t_name, "matchType": "matched", "source": "包含匹配(100%准确)"}
+            matched_part = t_name if (t_name and t_name in name) else t_spec_no
+            # 校验边界：匹配部分后面不能跟着字母或数字（防止 XP-80T 匹配 XP-80TS）
+            remainder = name.replace(matched_part, '', 1)
+            if not re.search(r'[A-Z0-9]', remainder):
+                return {**row.to_dict(), "matchedName": matched_part, "matchType": "matched", "source": "包含匹配(100%准确)"}
 
         # 针对三列分别计算模糊相似度 (0.0 - 1.0)
         # 权重：规格编号(1.2) > 货品名称(1.0) > 规格(0.8)
@@ -184,14 +225,26 @@ def find_product_match(name):
         # 按评分由高到低排序
         candidates.sort(key=lambda x: x['score'], reverse=True)
         # 增加逻辑：如果得分最高项相似度够高，就采用它
+        # 3. 增强逻辑：针对得分最高的候选者进行精确度校验
         best = candidates[0]['data']
-        # 为了让 57*50纸 这种能匹配到含此关键字的项目，做一次强包含检查
-        if candidates[0]['score'] < 0.8:
-            for cand in candidates:
-                c_name = str(cand['data'].get('货品名称', ''))
-                if name in c_name or c_name in name:
+        for cand in candidates:
+            c_name = str(cand['data'].get('货品名称', '')).strip()
+            # 精确匹配优先
+            if name == c_name:
+                best = cand['data']
+                break
+            # 包含关系检测：防止 XP-80T 匹配 XP-80TS
+            if c_name in name:
+                remainder = name.replace(c_name, '', 1)
+                if not re.search(r'[A-Z0-9]', remainder):
                     best = cand['data']
                     break
+            elif name in c_name:
+                remainder = c_name.replace(name, '', 1)
+                if not re.search(r'[A-Z0-9]', remainder):
+                    best = cand['data']
+                    break
+            if candidates.index(cand) > 5: break
 
         return {
             **best, 
@@ -205,84 +258,74 @@ def find_product_match(name):
     return {"matchedName": name, "matchType": "unmatched", "source": "未匹配"}
 
 
+
 def select_express(address, products, raw_text="", ai_province=""):
-    """根据地址、货品以及原文关键词自动匹配快递"""
-    express_rules = CONFIG_DATA.get("快递规则", {})
-    
-    # 0. 优先检测原文中的明确指派
+    """
+    根据地址、品类、重量自动分拣快递 (规则源自 快递表格.xls 和 配置规则.json)
+    """
     explicit_map = {
-        '顺丰': '顺丰速运',
-        '圆通': '圆通（渠道）',
-        '中通': '中通（渠道）',
-        '申通': '申通快递',
-        '韵达': '韵达快递',
-        '极兔': '极兔渠道（新）',
-        '德邦': '德邦特惠',
-        '邮政': '邮政EMS'
+        "顺丰": "顺丰现付（渠道）", "圆通": "圆通（渠道）", "中通": "中通（渠道）",
+        "极兔": "极兔渠道（新）", "德邦": "德邦特惠", "工厂": "工厂直发"
     }
     for kw, target in explicit_map.items():
-        if kw in raw_text:
-            return target
-
-    # 1. 检查特殊映射 (学习进化的结果)
-    express_special_map = CONFIG_DATA.get("快递特殊映射", {})
-    # 尝试匹配收货人或地址关键词
-    for key, val in express_special_map.items():
-        if key in address or key in raw_text:
-            return val
-
-    # 2. 检查工厂代发/直发
-    text_to_check = (address + " " + " ".join([p.get('searchName', '') for p in products])).lower()
-    if '工厂代发' in text_to_check: return '工厂代发'
-    if '工厂直发' in text_to_check: return '工厂直发'
+        if kw in raw_text: return target, f"[用户手动指定] -> {target}"
     
-    # 3. 识别省份
-    provinces = ['北京','天津','上海','重庆','河北','山西','辽宁','吉林','黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','海南','四川','贵州','云南','陕西','甘肃','青海','内蒙古','广西','西藏','宁夏','新疆']
+    provinces = ["北京","天津","河北","山西","内蒙古","辽宁","吉林","黑龙江","上海","江苏","浙江","安徽","福建","江西","山东","河南","湖北","湖南","广东","广西","海南","重庆","四川","贵州","云南","西藏","陕西","甘肃","青海","新疆"]
     province = ""
+    for p in provinces:
+        if (ai_province and p in ai_province) or (p in address): province = p; break
+    if not province: return "中通（渠道）", "未识别到省份，默认发中通"
     
-    # 优先从 AI 返回的省份字段匹配（增加容错：如“广东省”匹配“广东”）
-    if ai_province:
-        for p in provinces:
-            if p in ai_province:
-                province = p
-                break
+    rule = EXPRESS_TABLE.get(province)
+    if not rule: return "中通（渠道）", f"[{province}] 暂无匹配规则，默认中通"
     
-    # 如果 AI 没识别出有效的，从地址里暴力匹配
-    if not province:
-        for p in provinces:
-            if p in address:
-                province = p
-                break
+    total_weight, has_scale, has_cashier = 0, False, False
+    cat_rules = CONFIG_DATA.get("品类判定", {})
+    scale_cfg = cat_rules.get("一体称", {"前缀": ["X"], "关键词": ["一体称"]})
+    reg_cfg = cat_rules.get("收银机", {"前缀": ["K"], "关键词": ["收银机"]})
     
-    if not province: return "待定(未识别省份)"
-
-    # 3. 检查特殊品类
-    # 一体称判定：X开头+配置关键词
-    has_scale = any(str(p.get('searchName','')).upper().startswith('X') and any(word in str(p.get('searchName','')) for word in ['单屏','双屏','白色','黑色']) for p in products)
+    for p in products:
+        info = p.get("productInfo", {}) or {}
+        name = str(p.get("matchedName", "") or p.get("searchName", "")).upper()
+        qty = int(p.get("qty", 1))
+        w = info.get("重量", 0)
+        try: total_weight += float(w) * qty
+        except: pass
+        # 判定品类 (结合正则前缀和关键词判定)
+        import re
+        # 一体称判定：正则 X+数字 OR 关键词
+        if re.match(r'^X\d', name) or any(kw in name for kw in scale_cfg.get("关键词", [])):
+            has_scale = True
+        
+        # 收银机判定：正则 K+数字 OR 关键词
+        if re.match(r'^K\d', name) or any(kw in name for kw in reg_cfg.get("关键词", [])):
+            has_cashier = True
     
-    # 收银机判定：K开头 或 包含特定型号/关键词
-    has_register = any(
-        str(p.get('searchName','')).upper().startswith('K') or 
-        '收银' in str(p.get('searchName','')) or 
-        'XP-C' in str(p.get('searchName','')).upper() or 
-        'TX-' in str(p.get('searchName','')).upper() 
-        for p in products
-    )
-    
-    # 计算总重量 (g)
-    total_weight = sum([float((p.get('productInfo') or {}).get('重量', 0)) * int(p.get('qty', 1)) for p in products])
+    def normalize(name):
+        if not name or str(name) == "nan": return None
+        if name == "圆通": return "圆通（渠道）"
+        if name == "中通": return "中通（渠道）"
+        return str(name).strip()
     
     if has_scale:
-        return express_rules.get("一体称", {}).get("所有地区", "德邦特惠")
+        res = normalize(rule.get("一体称"))
+        final = res or "德邦特惠"
+        return final, f"[{province}][一体称] -> {final}"
+    if has_cashier:
+        res = normalize(rule.get("收银机"))
+        final = res or normalize(rule.get("打印机_大")) or "圆通（渠道）"
+        return final, f"[{province}][收银机] -> {final}"
     
-    if has_register:
-        reg_map = express_rules.get("收银机", {}).get("地区映射", {})
-        return reg_map.get(province, "中通（渠道）")
-    
-    # 4. 普通货品按重量
-    weight_seg = "1-2kg" if total_weight <= 2000 else "2-5kg" if total_weight <= 5000 else "5kg以上"
-    normal_rules = express_rules.get("普通货品", {}).get("重量分段", {})
-    return normal_rules.get(weight_seg, {}).get(province, "中通（渠道）")
+    weight_str = f"{round(total_weight,2)}kg"
+    if total_weight <= 2.0:
+        res = normalize(rule.get("打印机_小"))
+        return res, f"[{province}][打印机][{weight_str}] -> {res}"
+    elif total_weight <= 5.0:
+        res = normalize(rule.get("打印机_中"))
+        return res, f"[{province}][打印机][{weight_str}] -> {res}"
+    else:
+        res = normalize(rule.get("打印机_大"))
+        return res, f"[{province}][打印机][{weight_str}] -> {res}"
 
 def process_parsed_data(ai_result, raw_text):
     """对AI返回的结果进行二次处理和数据补充"""
@@ -447,7 +490,10 @@ def process_parsed_data(ai_result, raw_text):
         final_result["total"] = calculated_total
 
     # 快递计算
-    final_result["express"] = select_express(final_result["address"], final_result["products"], raw_text=raw_text, ai_province=ai_result.get("province", ""))
+    # 快递处理
+    res_exp, res_reason = select_express(final_result["address"], final_result["products"], raw_text=raw_text, ai_province=ai_result.get("province", ""))
+    final_result["express"] = res_exp
+    final_result["expressReason"] = res_reason
 
     # 最终结果整合
     final_result["customer"] = final_customer
@@ -526,6 +572,7 @@ def get_options():
         "customers": customers,
         "payMethods": pay_methods,
         "receipts": receipts,
+        "expressOptions": EXPRESS_OPTIONS,
         "allProducts": all_products,
         "allProductsData": all_products_data
     })
