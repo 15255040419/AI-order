@@ -278,6 +278,8 @@
 
         // SVG 图标
         const icons = {
+            checkCircle: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>`,
+            user: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
             sparkles: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364-.707-.707M6.343 6.343l-.707-.707m12.728 0-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/></svg>`,
             send: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: translate(-1px, 1px);"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>`,
             download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`,
@@ -360,7 +362,7 @@
                     <div class="pupil" style="width: 12px; height: 12px; border-radius: 50%; background: #2d2d2d; transition: transform 0.1s;"></div>
                     <div class="pupil" style="width: 12px; height: 12px; border-radius: 50%; background: #2d2d2d; transition: transform 0.1s;"></div>
                 </div>
-                <div style="position: absolute; left: 40px; top: 88px; width: 50px; height: 4px; background: #2d2d2d; border-radius: 2px; transition: all 0.7s ease-in-out;"></div>
+                <div class="mouth-line" style="position: absolute; left: 54px; top: 88px; width: 40px; height: 4px; background: #2d2d2d; border-radius: 2px; transition: all 0.7s ease-in-out;"></div>
             `;
 
             container.appendChild(purple);
@@ -384,11 +386,18 @@
                     char.style.transform = `skewX(${bodySkew}deg)`;
 
                     const faceContainer = char.querySelector('div[style*="transition"]');
+                    const mouthLine = char.querySelector('.mouth-line');
                     if (faceContainer) {
                         const baseLeft = char === purple ? 45 : char === black ? 26 : char === orange ? 82 : 52;
                         const baseTop = char === purple ? 40 : char === black ? 32 : char === orange ? 90 : 40;
                         faceContainer.style.left = `${baseLeft + faceX}px`;
                         faceContainer.style.top = `${baseTop + faceY}px`;
+                        
+                        // 🌟 如果是黄色小人，让它的横线嘴巴也跟着动 (修正基准点为 54px)
+                        if (mouthLine) {
+                            mouthLine.style.left = `${54 + faceX * 1.2}px`;
+                            mouthLine.style.top = `${88 + faceY * 0.8}px`;
+                        }
                     }
 
                     // 眼珠跟随
@@ -434,7 +443,7 @@
         // 订单卡片
         function OrderCard(order, index, globalOptions, onUpdate, onDelete, isDuplicate = false) {
             const card = document.createElement('div');
-            card.className = `bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all card-animate ${isDuplicate ? 'duplicate-highlight shadow-xl shadow-red-200' : ''}`;
+            card.className = `bg-white rounded-xl shadow-sm border border-gray-100 p-3 mb-4 transition-all hover:shadow-md ${isDuplicate ? 'duplicate-highlight shadow-xl shadow-red-200' : ''}`;
             card.style.height = 'fit-content';
 
             if (order.loading) {
@@ -459,168 +468,156 @@
                 return card;
             }
 
-            // Header
-            const header = document.createElement('div');
-            header.className = 'px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50 flex items-center justify-between';
-            header.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <span class="text-xs font-extrabold text-blue-500 bg-blue-100/50 px-2 py-0.5 rounded-full">#${index + 1}</span>
-                    <h3 class="font-bold text-gray-900 text-sm">
-                        ${order.receiver || '未命名订单'}
-                    </h3>
-                </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-base font-bold text-blue-600">¥${order.total || 0}</span>
-                    <button onclick="confirmDeleteOrder(${order.id})" class="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full flex items-center justify-center transition-all">
-                        ${icons.trashSmall}
-                    </button>
-                </div>
-            `;
-
             // Content
-            const content = document.createElement('div');
-            content.className = 'p-4 space-y-4';
-            content.innerHTML = `
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">收货人</label>
-                        <input type="text" value="${order.receiver || ''}" onchange="updateOrder(${order.id}, 'receiver', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white" />
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">手机号</label>
-                        <input type="text" value="${order.phone || ''}" onchange="updateOrder(${order.id}, 'phone', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white" />
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">应收合计</label>
-                        <input type="number" value="${order.total || 0}" onchange="updateOrder(${order.id}, 'total', parseFloat(this.value))" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-bold text-blue-600 bg-white" />
-                    </div>
-                    <div class="space-y-1 col-span-2">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">收货地址</label>
-                        <input type="text" value="${order.address || ''}" onchange="updateOrder(${order.id}, 'address', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white" />
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">应收邮资</label>
-                        <input type="number" value="${order.freight || 0}" onchange="updateOrder(${order.id}, 'freight', parseFloat(this.value))" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white" />
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">客户账号</label>
-                        <select onchange="updateCustomerLink(${order.id}, this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-sm">
-                            <option value="">未关联</option>
-                            ${order.customer_candidates && order.customer_candidates.length > 0 ? `
-                                <optgroup label="✨ 智能匹配候选">
-                                    ${order.customer_candidates.map(c => `<option value="${c.客户账号}" ${window.findBestMatch([c.客户账号], order.account) === c.客户账号 ? 'selected' : ''}>${c.客户账号} (${c.客户名称})</option>`).join('')}
-                                </optgroup>
-                            ` : ''}
-                            ${globalOptions.customers && globalOptions.customers.length > 0 ? `
-                                <optgroup label="👥 所有客户">
-                                    ${globalOptions.customers.map(c => `<option value="${c.客户账号}" ${window.findBestMatch(globalOptions.customers.map(cc => cc.客户账号), order.account) === c.客户账号 ? 'selected' : ''}>${c.客户名称}</option>`).join('')}
-                                </optgroup>
-                            ` : ''}
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">业务员</label>
-                        <select onchange="updateOrder(${order.id}, 'salesman', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-sm">
-                            <option value="">选择业务员</option>
-                            ${globalOptions.salesmen.map(s => `<option value="${s}" ${window.findBestMatch(globalOptions.salesmen, order.salesman) === s ? 'selected' : ''}>${s}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">结算方式</label>
-                        <select onchange="updateOrder(${order.id}, 'payMethod', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${order.payMethod === '欠款计应收' ? 'bg-yellow-100 font-bold border-yellow-300' : 'bg-white'} shadow-sm transition-colors duration-200">
-                            <option value="银行收款" ${order.payMethod === '银行收款' ? 'selected' : ''}>银行收款</option>
-                            <option value="欠款计应收" ${order.payMethod === '欠款计应收' ? 'selected' : ''}>欠款计应收</option>
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">收款账户</label>
-                        <select onchange="updateOrder(${order.id}, 'receipt', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${order.payMethod === '欠款计应收' ? 'bg-yellow-100 font-bold border-yellow-300' : 'bg-white'} shadow-sm transition-colors duration-200">
-                            <option value="">选择账户</option>
-                            ${globalOptions.receipts.map(r => `<option value="${r}" ${window.findBestMatch(globalOptions.receipts, order.receipt) === r ? 'selected' : ''}>${r}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">快递</label>
-                        <div class="flex flex-col gap-1">
-                            <select onchange="updateOrder(${order.id}, 'express', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-sm font-bold text-gray-700">
-                                <option value="">-- 请选择快递 --</option>
-                                ${(globalOptions.expressOptions || []).map(e => `<option value="${e}" ${order.express === e ? 'selected' : ''}>${e}</option>`).join('')}
-                            </select>
-                            ${order.expressReason ? `
-                                <div class="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 flex items-center gap-1" title="${order.expressReason}">
-                                    <span class="opacity-70">依据:</span>
-                                    <span class="font-medium truncate">${order.expressReason}</span>
-                                </div>
-                            ` : ''}
+            card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-extrabold text-blue-500 bg-blue-100/50 px-2 py-0.5 rounded-full">#${index + 1}</span>
+                            <h3 class="font-bold text-gray-900 text-xs">${order.receiver || '新订单'}</h3>
                         </div>
-                    </div>
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs text-gray-600">客服备注</label>
-                    <input type="text" value="${order.note || ''}" onchange="updateOrder(${order.id}, 'note', this.value)" placeholder="添加备注信息..." class="w-full h-9 text-sm px-3 py-2 border border-amber-200 bg-amber-50 rounded-md focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-                </div>
-                ${order.products && order.products.length > 0 ? `
-                    <div class="space-y-2">
-                        <button onclick="toggleProducts(${order.id})" class="w-full flex items-center justify-between h-9 px-3 hover:bg-blue-50 rounded-md transition-colors">
-                            <div class="flex items-center gap-2 overflow-hidden mr-4">
-                                ${icons.package}
-                                <span class="text-xs font-medium text-gray-700 whitespace-nowrap">货品清单 (${order.products.length} 件):</span>
-                                <span class="text-[11px] text-blue-600 font-bold truncate">
-                                    ${order.products.map(p => `${p.matchedName || p.searchName} * ${p.qty}`).join(', ')}
-                                </span>
-                            </div>
-                            <span id="chevron-${order.id}">${icons.chevronDown}</span>
+                        <button onclick="confirmDeleteOrder(${order.id})" class="h-6 w-6 text-gray-300 hover:text-red-500 transition-colors">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                         </button>
-                        <div id="products-${order.id}" style="display: none;" class="rounded-lg border border-gray-200 overflow-x-auto custom-scrollbar">
-                            <table class="min-w-[700px] w-full text-sm">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-1/4">货品名称</th>
-                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">货品编号</th>
-                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">条码</th>
-                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">规格</th>
-                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-20">数量</th>
-                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-24">价格</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${order.products.map((p, idx) => `
-                                        <tr class="border-t border-gray-100 hover:bg-gray-50/50 transition-colors">
-                                            <td class="px-3 py-2">
-                                                <select onchange="updateProduct(${order.id}, ${idx}, 'matchedName', this.value)" class="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 bg-white">
-                                                    <option value="">-- 请选择 --</option>
-                                                    ${p.candidates && p.candidates.length > 0 ? `
-                                                        <optgroup label="✨ 智能匹配候选">
-                                                            ${p.candidates.map(c => `<option value="${c}" ${p.matchedName === c ? 'selected' : ''}>${c}</option>`).join('')}
-                                                        </optgroup>
-                                                    ` : ''}
-                                                    ${globalOptions.allProducts && globalOptions.allProducts.length > 0 ? `
-                                                        <optgroup label="📦 所有货品">
-                                                            ${globalOptions.allProducts.map(pn => `<option value="${pn}" ${p.matchedName === pn ? 'selected' : ''}>${pn}</option>`).join('')}
-                                                        </optgroup>
-                                                    ` : ''}
-                                                </select>
-                                            </td>
-                                            <td class="px-2 py-2 text-xs text-gray-500 font-medium">${p.productInfo?.['货品编号'] || '—'}</td>
-                                            <td class="px-2 py-2 text-xs text-gray-400 font-mono">${p.productInfo?.['条码'] || '—'}</td>
-                                            <td class="px-2 py-2 text-xs text-gray-500">${p.productInfo?.['规格'] || '—'}</td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" value="${p.qty}" onchange="updateProduct(${order.id}, ${idx}, 'qty', parseInt(this.value))" class="w-full h-8 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-center" />
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" value="${p.price || 0}" onchange="updateProduct(${order.id}, ${idx}, 'price', parseFloat(this.value))" class="w-full h-8 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-center font-bold text-blue-600" />
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                        <!-- 收货信息组 -->
+                        <div class="space-y-2 col-span-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">收货人</label>
+                                    <input type="text" value="${order.receiver || ''}" onchange="updateOrder(${order.id}, 'receiver', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-medium" />
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">手机号</label>
+                                    <input type="text" value="${order.phone || ''}" onchange="updateOrder(${order.id}, 'phone', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-medium" />
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">收货地址</label>
+                                <input type="text" value="${order.address || ''}" onchange="updateOrder(${order.id}, 'address', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-medium" />
+                            </div>
+                        </div>
+                        
+                        <!-- 财务组 -->
+                        <div class="space-y-2 border-l border-gray-100 pl-3">
+                             <div class="grid grid-cols-2 gap-2">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">应收合计</label>
+                                    <input type="number" value="${order.total || 0}" onchange="updateOrder(${order.id}, 'total', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white font-bold text-blue-600" />
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">应收邮费</label>
+                                    <input type="number" value="${order.freight || 0}" onchange="updateOrder(${order.id}, 'freight', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800" />
+                                </div>
+                             </div>
+                             <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">结算方式</label>
+                                <select onchange="updateOrder(${order.id}, 'payMethod', this.value)" class="w-full h-8 text-sm px-2 border border-gray-200 rounded-lg bg-white text-gray-800 font-medium focus:outline-none">
+                                    <option value="银行收款" ${order.payMethod === '银行收款' ? 'selected' : ''}>银行收款</option>
+                                    <option value="欠款计应收" ${order.payMethod === '欠款计应收' ? 'selected' : ''}>欠款计应收</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                ` : ''}
-            `;
 
-            card.appendChild(header);
-            card.appendChild(content);
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 pt-2 border-t border-gray-100">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">客户账号 (可直接修改)</label>
+                            <input type="text" value="${order.account || ''}" onchange="updateOrder(${order.id}, 'account', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold text-gray-800" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">收款账户</label>
+                            <select onchange="updateOrder(${order.id}, 'receipt', this.value)" class="w-full h-8 text-sm px-2 border border-gray-200 rounded-lg bg-white font-bold text-gray-800 focus:outline-none">
+                                <option value="">-- 选择账户 --</option>
+                                ${globalOptions.receipts.map(r => `<option value="${r}" ${window.findBestMatch(globalOptions.receipts, order.receipt) === r ? 'selected' : ''}>${r}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                             <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">业务员</label>
+                             <select onchange="updateOrder(${order.id}, 'salesman', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg bg-white focus:outline-none text-gray-800 font-medium">
+                                <option value="">-- 选择业务员 --</option>
+                                ${order.salesman ? `<option value="${order.salesman}" selected>${order.salesman}</option>` : ''}
+                                ${globalOptions.salesmen.filter(s => s !== order.salesman).map(s => `<option value="${s}">${s}</option>`).join('')}
+                             </select>
+                        </div>
+                    </div>
+
+                    ${order.products && order.products.length > 0 ? `
+                        <div class="space-y-2">
+                            <button onclick="toggleProducts(${order.id})" class="w-full flex items-center justify-between h-9 px-3 hover:bg-blue-50 rounded-md transition-colors">
+                                <div class="flex items-center gap-2 overflow-hidden mr-4">
+                                    ${icons.package}
+                                    <span class="text-xs font-medium text-gray-700 whitespace-nowrap">货品清单 (${order.products.length} 件):</span>
+                                    <span class="text-[11px] text-blue-600 font-bold truncate">
+                                        ${order.products.map(p => `${p.matchedName || p.searchName} * ${p.qty}`).join(', ')}
+                                    </span>
+                                </div>
+                                <span id="chevron-${order.id}">${icons.chevronDown}</span>
+                            </button>
+                            <div id="products-${order.id}" style="display: none;" class="rounded-lg border border-gray-200 overflow-x-auto custom-scrollbar">
+                                <table class="min-w-[700px] w-full text-sm">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-1/4">货品名称</th>
+                                            <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">货品编号</th>
+                                            <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">条码</th>
+                                            <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">规格</th>
+                                            <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-20">数量</th>
+                                            <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-24">价格</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${order.products.map((p, idx) => `
+                                            <tr class="border-t border-gray-100 hover:bg-gray-50/50 transition-colors">
+                                                <td class="px-3 py-2">
+                                                    <select onchange="updateProduct(${order.id}, ${idx}, 'matchedName', this.value)" class="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+                                                        <option value="">-- 请选择 --</option>
+                                                        
+                                                        <!-- 1. 强制显示当前已匹配项 (确保不为空) -->
+                                                        ${p.matchedName ? `<option value="${p.matchedName}" selected>✅ 已匹配: ${p.matchedName}</option>` : ''}
+                                                        
+                                                        <!-- 2. 候选列表 -->
+                                                        ${p.candidates && p.candidates.length > 0 ? `
+                                                            <optgroup label="✨ 智能匹配候选">
+                                                                ${p.candidates.filter(c => c !== p.matchedName).map(c => `<option value="${c}">${c}</option>`).join('')}
+                                                            </optgroup>
+                                                        ` : ''}
+                                                        
+                                                        <!-- 3. 部分全量库 -->
+                                                        ${globalOptions.allProducts && globalOptions.allProducts.length > 0 ? `
+                                                            <optgroup label="📦 所有货品 (仅显示部分)">
+                                                                ${globalOptions.allProducts.slice(0, 50).filter(pn => pn !== p.matchedName).map(pn => `<option value="${pn}">${pn}</option>`).join('')}
+                                                            </optgroup>
+                                                        ` : ''}
+                                                    </select>
+                                                </td>
+                                                <td class="px-2 py-2 text-xs text-gray-500 font-medium">${p.spec_no || p.item_no || '—'}</td>
+                                                <td class="px-2 py-2 text-xs text-gray-400 font-mono">${p.barcode || '—'}</td>
+                                                <td class="px-2 py-2 text-xs text-gray-500">${p.spec || '—'}</td>
+                                                <td class="px-2 py-2">
+                                                    <input type="number" value="${p.qty}" onchange="updateProduct(${order.id}, ${idx}, 'qty', parseInt(this.value))" class="w-full h-8 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-center" />
+                                                </td>
+                                                <td class="px-2 py-2">
+                                                    <input type="number" value="${p.price || 0}" onchange="updateProduct(${order.id}, ${idx}, 'price', parseFloat(this.value))" class="w-full h-8 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-center font-bold text-blue-600" />
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- 底部：订单原文回显 (大字版) -->
+                    <div class="mt-3 pt-3 border-t border-dashed border-gray-200">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">📦 发送的订单原文</span>
+                        </div>
+                        <div class="bg-blue-50/20 rounded-lg p-3 text-sm text-gray-700 font-medium whitespace-pre-wrap leading-relaxed border border-blue-100/50 shadow-inner">
+                            ${order.raw || '无原文记录'}
+                        </div>
+                    </div>
+            `;
 
             return card;
         }
@@ -702,14 +699,20 @@
                         const oldMatch = products[productIndex].matchedName;
                         const searchName = p.name || p.searchName;
                         if (appState.globalOptions.allProductsData) {
-                            // 增强：去除空格并转字符串匹配，保障万无一失
                             const info = appState.globalOptions.allProductsData.find(s =>
                                 String(s['货品名称']).trim() === String(value).trim()
                             );
-                            if (info) p.productInfo = info;
+                            if (info) {
+                                p.productInfo = info;
+                                // 🌟 关键同步：把查到的原始列信息填进我们的标准字段里
+                                p.spec_no = info['规格编号'] || info['货品代码'] || info['编码'] || info['货品编号'] || '';
+                                p.item_no = info['货品编号'] || info['货品代码'] || info['商品编号'] || '';
+                                p.barcode = info['条码'] || info['货品条码'] || info['商品条码'] || '';
+                                p.spec = info['规格'] || info['货品规格'] || info['型号规格'] || '';
+                            }
                         }
                         if (value && value !== oldMatch && searchName) {
-                            learnCorrection('product', searchName, value); 
+                            learnCorrection('product', searchName, value, o.account); 
                         }
                     }
 
@@ -729,14 +732,14 @@
             render();
         };
 
-        async function learnCorrection(type, rawName, matchedName) {
+        async function learnCorrection(type, rawName, matchedName, customer) {
             try {
                 await fetch(`${BACKEND_BASE_URL}/learn`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type, rawName, matchedName })
+                    body: JSON.stringify({ type, rawName, matchedName, customer })
                 });
-                console.log(`💡 系统进步 [${type}]：记录了 ${rawName} -> ${matchedName}`);
+                console.log(`💡 系统进步 [${type}]：记录了 ${rawName} -> ${matchedName} (客户: ${customer || '未知'})`);
                 fetchOptions();
             } catch (e) { console.error('Learning Failed', e); }
         }
@@ -771,6 +774,7 @@
                 const res = await fetch(`${BACKEND_BASE_URL}/options`);
                 if (res.ok) {
                     appState.globalOptions = await res.json();
+                    console.log('✅ 系统配置与库存加载成功');
                 }
             } catch (e) {
                 console.error('Options Failed', e);

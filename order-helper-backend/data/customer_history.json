@@ -1,0 +1,45 @@
+{
+    "湖州客如云-小周": [
+        {
+            "matchedName": "T80Q",
+            "spec_no": null,
+            "item_no": null,
+            "barcode": null,
+            "spec": null
+        }
+    ],
+    "珠海商颂科技": [
+        {
+            "matchedName": "XP-58IIN(黑色USB+4G（云）)",
+            "spec_no": "XP-58IIN(USB+4G（云）)",
+            "item_no": "XP-58",
+            "barcode": "6974657411257",
+            "spec": "黑色USB+4G（云）"
+        },
+        {
+            "matchedName": "57*50*1卷",
+            "spec_no": "",
+            "item_no": "",
+            "barcode": "",
+            "spec": ""
+        }
+    ],
+    "杭州美团-星辰": [
+        {
+            "matchedName": "XP-N260L(黑色USB+网口+WIFI（云）)",
+            "spec_no": "XP-N260L（USB+网口+WIFI）",
+            "item_no": "XP-8060",
+            "barcode": "XP-80600252",
+            "spec": "黑色USB+网口+WIFI（云）"
+        }
+    ],
+    "厦门陈卓": [
+        {
+            "matchedName": "XP-246B(黑白USB+蓝牙)",
+            "spec_no": "XP-246B(USB+蓝牙)",
+            "item_no": "XP-BT0036",
+            "barcode": "6974657411462",
+            "spec": "黑白USB+蓝牙"
+        }
+    ]
+}
