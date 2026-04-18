@@ -658,6 +658,15 @@
                         }
                     }
 
+                    // 🌟 联动C: 快递修改触发学习
+                    if (field === 'express' && value) {
+                        const key = o.receiver || o.address;
+                        if (key && o.express.includes('待定')) {
+                            console.log(`🧠 系统正在同步学习快递规则: ${key} -> ${value}`);
+                            learnCorrection('express', key, value);
+                        }
+                    }
+
                     if (field === 'freight' || field === 'total') {
                         const prodSum = o.products.reduce((sum, p) => sum + (parseFloat(p.price || 0) * parseInt(p.qty || 1)), 0);
                         if (field === 'freight') {
@@ -689,7 +698,7 @@
                             if (info) p.productInfo = info;
                         }
                         if (value && value !== oldMatch && searchName) {
-                            // learnCorrection('product', searchName, value); // 💡 已根据用户要求禁用货品自主学习
+                            learnCorrection('product', searchName, value); 
                         }
                     }
 
@@ -829,7 +838,7 @@
             }
 
             const wb = XLSX.utils.book_new();
-            const orderRows = [['导入编号', '收货人', '手机', '收货地址', '收货人信息(解析)', '应收邮资', '应收合计', '客服备注', '客户账号', '销售渠道名称', '结算方式', '物流公司', '收款账户', '业务员']];
+            const orderRows = [['导入编号', '收货人', '手机', '收货地址', '收货人信息(解析)', '应收邮资', '应收合计', '客服备注', '客户账号', '销售渠道名称', '结算方式', '物流公司', '物流单号', '支付单号', '收款账户', '业务员']];
             const prodRows = [['导入编号(关联订单)', '货品名称', '条码', '货品编号', '规格', '数量', '单价']];
 
             appState.orders.forEach((r, idx) => {
@@ -840,6 +849,7 @@
                     r.freight || 0, r.total || 0, r.note || '',
                     r.account || '', r.salesChannel || '仝心科技线下批发',
                     r.payMethod || '欠款计应收', r.express || '',
+                    '', '', // 物流单号, 支付单号 (留空)
                     r.receipt || '', r.salesman || ''
                 ]);
                 (r.products || []).forEach(p => {
