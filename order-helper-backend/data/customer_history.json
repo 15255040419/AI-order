@@ -41,5 +41,40 @@
             "barcode": "6974657411462",
             "spec": "黑白USB+蓝牙"
         }
+    ],
+    "泰州客如云-翟言明": [
+        {
+            "matchedName": "JY-335C(黑色RJ11)",
+            "spec_no": "JY-335C黑色",
+            "item_no": "QX-00014",
+            "barcode": "JYB001",
+            "spec": "黑色RJ11"
+        },
+        "MHT-P16L"
+    ],
+    "罗金舟": [
+        {
+            "matchedName": "JY-335C(黑色RJ11)",
+            "spec_no": "JY-335C黑色",
+            "item_no": "QX-00014",
+            "barcode": "JYB001",
+            "spec": "黑色RJ11"
+        }
+    ],
+    "成都星宇星宸科技": [
+        {
+            "matchedName": "XP-C503(USB+4G+蓝牙)",
+            "spec_no": "XP-C503(USB+4G+蓝牙)",
+            "item_no": "XP-124",
+            "barcode": "6974657413053",
+            "spec": "USB+4G+蓝牙"
+        },
+        {
+            "matchedName": "57*50纸(57*50纸)",
+            "spec_no": "nan",
+            "item_no": "RM-0002",
+            "barcode": "TXXPZ002",
+            "spec": "57*50纸"
+        }
     ]
 }
