@@ -479,112 +479,108 @@
                         <div class="flex items-center gap-5">
                             <span class="bg-blue-600 text-white text-xs font-black px-3 py-1 rounded-md shadow-sm">#${index + 1}</span>
                             <h3 class="font-bold text-gray-900 text-lg tracking-tight">${order.receiver || '新订单'}</h3>
-                                           <div class="flex flex-col gap-1.5">
-                        <!-- 第一排：核心信息 (极致紧凑) -->
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            <div class="space-y-0.5">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">收货人</label>
-                                <input type="text" value="${order.receiver || ''}" onchange="updateOrder(${order.id}, 'receiver', this.value)" class="w-full h-8 text-sm px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-bold" />
+                        </div>
+                        <button onclick="confirmDeleteOrder(${order.id})" class="h-8 w-8 flex items-center justify-center text-red-700 bg-red-50 hover:bg-red-800 hover:text-white rounded-full transition-all border border-red-100">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- 第一排：收货核心与财务汇总 (4列等宽) -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">收货人</label>
+                                <input type="text" value="${order.receiver || ''}" onchange="updateOrder(${order.id}, 'receiver', this.value)" class="w-full h-9 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-bold" />
                             </div>
-                            <div class="space-y-0.5">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">手机号</label>
-                                <input type="text" value="${order.phone || ''}" onchange="updateOrder(${order.id}, 'phone', this.value)" class="w-full h-8 text-sm px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-bold" />
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">手机号</label>
+                                <input type="text" value="${order.phone || ''}" onchange="updateOrder(${order.id}, 'phone', this.value)" class="w-full h-9 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-bold" />
                             </div>
-                            <div class="space-y-0.5">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">应收合计</label>
-                                <input type="number" value="${order.total || 0}" onchange="updateOrder(${order.id}, 'total', this.value)" class="w-full h-8 text-sm px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white font-black text-blue-600 text-center" />
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">应收合计</label>
+                                <input type="number" value="${order.total || 0}" onchange="updateOrder(${order.id}, 'total', this.value)" class="w-full h-9 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white font-black text-blue-600 text-center" />
                             </div>
-                            <div class="space-y-0.5">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">应收邮费</label>
-                                <input type="number" value="${order.freight || 0}" onchange="updateOrder(${order.id}, 'freight', this.value)" class="w-full h-8 text-sm px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 text-center" />
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">应收邮费</label>
+                                <input type="number" value="${order.freight || 0}" onchange="updateOrder(${order.id}, 'freight', this.value)" class="w-full h-9 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 text-center" />
                             </div>
                         </div>
 
-                        <!-- 第二排：地址 (紧贴) -->
-                        <div class="space-y-0.5">
-                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">收货地址</label>
-                            <input type="text" value="${order.address || ''}" onchange="updateOrder(${order.id}, 'address', this.value)" class="w-full h-8 text-sm px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-medium" />
+                        <!-- 第二排：地址 (独占一行) -->
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">收货地址</label>
+                            <input type="text" value="${order.address || ''}" onchange="updateOrder(${order.id}, 'address', this.value)" class="w-full h-9 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-medium" />
                         </div>
 
-                        <!-- 第三排：业务属性 (极致紧凑, 隐藏虚线边框以省空间) -->
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1 border-t border-dashed border-gray-100">
-                             <div class="md:col-span-2 space-y-0.5">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">客户账号</label>
-                                <input type="text" value="${order.account || ''}" onchange="updateOrder(${order.id}, 'account', this.value)" class="w-full h-8 text-sm px-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold text-gray-800" />
+                        <!-- 第三排：业务属性 (重新分配比例) -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 py-3 border-y border-dashed border-gray-100">
+                             <div class="md:col-span-2 space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">客户账号 (长字段)</label>
+                                <input type="text" value="${order.account || ''}" onchange="updateOrder(${order.id}, 'account', this.value)" class="w-full h-9 text-sm px-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold text-gray-800" />
                             </div>
-                            <div class="space-y-0.5">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">业务员</label>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">业务员</label>
                                 <div class="relative">
-                                     <select onchange="updateOrder(${order.id}, 'salesman', this.value)" class="w-full h-8 text-sm px-2 pr-6 border border-gray-200 rounded-lg bg-white focus:outline-none text-gray-800 appearance-none cursor-pointer">
+                                     <select onchange="updateOrder(${order.id}, 'salesman', this.value)" class="w-full h-9 text-sm px-3 pr-8 border border-gray-200 rounded-lg bg-white focus:outline-none text-gray-800 appearance-none cursor-pointer">
                                         <option value="">-- 请选择 --</option>
                                         ${order.salesman ? `<option value="${order.salesman}" selected>${order.salesman}</option>` : ''}
                                         ${globalOptions.salesmen.filter(s => s !== order.salesman).map(s => `<option value="${s}">${s}</option>`).join('')}
                                      </select>
-                                     <div class="absolute right-1.5 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
+                                     <div class="absolute right-2 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
                                 </div>
                             </div>
-                            <div class="space-y-0.5">
-                                 <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">快递公司</label>
-                                 <div class="relative">
-                                     <select onchange="updateOrder(${order.id}, 'express', this.value)" class="w-full h-8 text-sm px-2 pr-6 border border-gray-200 rounded-lg bg-white focus:outline-none text-blue-600 font-black appearance-none cursor-pointer">
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">快递公司</label>
+                                <div class="relative">
+                                     <select onchange="updateOrder(${order.id}, 'express', this.value)" class="w-full h-9 text-sm px-3 pr-8 border border-gray-200 rounded-lg bg-white focus:outline-none text-blue-600 font-black appearance-none cursor-pointer">
                                         <option value="">-- 自动计算 --</option>
                                         ${globalOptions.expressOptions.map(e => `<option value="${e}" ${order.express === e ? 'selected' : ''}>${e}</option>`).join('')}
                                      </select>
-                                     <div class="absolute right-1.5 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
-                                 </div>
-                                 <p class="text-[9px] text-gray-400 px-1 font-medium leading-[1] line-clamp-1" title="${order.expressReason || '依据判定'}">
-                                    💡 ${order.expressReason || 'AI规则自动判定'}
-                                 </p>
+                                     <div class="absolute right-2 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
+                                </div>
+                                <p class="text-[10px] text-gray-400 mt-1 px-1 font-medium truncate" title="${order.expressReason || '依据判定'}">
+                                    💡 ${order.expressReason || 'AI依据规则库判定'}
+                                </p>
                             </div>
                         </div>
 
-                        <!-- 第四排：财务 (紧凑并排) -->
-                        <div class="grid grid-cols-2 gap-2">
-                            <div class="space-y-0.5">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">结算方式</label>
+                        <!-- 第四排：财务关键字段 (并排) -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">结算方式</label>
                                 <div class="relative">
-                                    <select onchange="updateOrder(${order.id}, 'payMethod', this.value)" class="w-full h-8 text-sm px-2 pr-6 border border-gray-200 rounded-lg bg-white text-gray-800 font-bold focus:outline-none appearance-none cursor-pointer">
+                                    <select onchange="updateOrder(${order.id}, 'payMethod', this.value)" class="w-full h-9 text-sm px-3 pr-8 border border-gray-200 rounded-lg bg-white text-gray-800 font-bold focus:outline-none appearance-none cursor-pointer">
                                         <option value="银行收款" ${order.payMethod === '银行收款' ? 'selected' : ''}>银行收款</option>
                                         <option value="欠款计应收" ${order.payMethod === '欠款计应收' ? 'selected' : ''}>欠款计应收</option>
                                     </select>
-                                    <div class="absolute right-1.5 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
+                                    <div class="absolute right-2 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
                                 </div>
                             </div>
-                            <div class="space-y-0.5">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">收款账户</label>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">收款账户</label>
                                 <div class="relative">
-                                    <select onchange="updateOrder(${order.id}, 'receipt', this.value)" class="w-full h-8 text-sm px-2 pr-6 border border-gray-200 rounded-lg bg-white font-bold text-gray-800 focus:outline-none appearance-none cursor-pointer">
+                                    <select onchange="updateOrder(${order.id}, 'receipt', this.value)" class="w-full h-9 text-sm px-3 pr-8 border border-gray-200 rounded-lg bg-white font-bold text-gray-800 focus:outline-none appearance-none cursor-pointer">
                                         <option value="">-- 选择账户 --</option>
                                         ${globalOptions.receipts.map(r => `<option value="${r}" ${window.findBestMatch(globalOptions.receipts, order.receipt) === r ? 'selected' : ''}>${r}</option>`).join('')}
                                     </select>
-                                    <div class="absolute right-1.5 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
+                                    <div class="absolute right-2 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 第五排：备注 (最小化高度) -->
-                        <div class="space-y-0.5">
-                             <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">客户备注 / 细节说明</label>
-                             <textarea onchange="updateOrder(${order.id}, 'note', this.value)" class="w-full min-h-[32px] text-xs px-2 py-1 border border-gray-200 rounded-lg bg-blue-50/50 text-blue-800 font-bold focus:outline-none resize-none overflow-hidden leading-snug" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">${order.note || ''}</textarea>
+                        <!-- 第五排：备注 (单独一行，自动换行) -->
+                        <div class="space-y-1">
+                             <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">客户备注 / 细节说明</label>
+                             <textarea onchange="updateOrder(${order.id}, 'note', this.value)" class="w-full min-h-[54px] text-xs px-3 py-2 border border-gray-200 rounded-lg bg-blue-50/50 text-blue-800 font-bold focus:outline-none resize-none overflow-hidden leading-relaxed" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">${order.note || ''}</textarea>
                         </div>
 
                         ${order.products && order.products.length > 0 ? `
-                            <div class="pt-0.5">
-                                <button onclick="toggleProducts(${order.id})" class="w-full flex items-center justify-between h-7 px-3 bg-blue-50/70 border border-blue-100 rounded-lg hover:bg-blue-100 shadow-sm group transition-all">
-                                    <div class="flex items-center gap-2 overflow-hidden">
-                                        <span class="text-blue-600 scale-75">${icons.package}</span>
-                                        <span class="text-[10px] font-bold text-gray-700">货品清单 (${order.products.length})</span>
-                                        <span class="text-[10px] text-blue-800 font-black truncate max-w-[500px]">
-                                            ${order.products.map(p => `${p.matchedName || p.searchName} * ${p.qty}`).join(', ')}
-                                        </span>
-                                    </div>
-                                    <span id="chevron-${order.id}" class="text-blue-400 group-hover:text-blue-600 scale-75">${icons.chevronDown}</span>
-                                </button>
-m group">
-                                    <div class="flex items-center gap-2 overflow-hidden">
+                            <div class="pt-2">
+                                <button onclick="toggleProducts(${order.id})" class="w-full flex items-center justify-between h-10 px-4 bg-blue-50/70 border border-blue-100 rounded-lg transition-all hover:bg-blue-100 shadow-sm group">
+                                    <div class="flex items-center gap-3 overflow-hidden">
                                         <span class="text-blue-600">${icons.package}</span>
-                                        <span class="text-[11px] font-bold text-gray-700">货品清单 (${order.products.length}):</span>
-                                        <span class="text-[11px] text-blue-800 font-black truncate max-w-[480px]">
+                                        <span class="text-xs font-bold text-gray-700">货品清单 (${order.products.length} 件):</span>
+                                        <span class="text-xs text-blue-800 font-black truncate max-w-[450px]">
                                             ${order.products.map(p => `${p.matchedName || p.searchName} * ${p.qty}`).join(', ')}
                                         </span>
                                     </div>
