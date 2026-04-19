@@ -54,11 +54,11 @@ class OrderAIParser:
 }}
 
 【特别硬规则（必须严格遵守）】:
-1. 禁止污染名字：货品名称中绝对不能包含数量标识（如 *2, x1, 2台, 两台）。数量必须单独放在 "qty" 字段。
-2. 剥离备注：如果原文是 "T80Q黑色"，请将 "T80Q" 填入 name，"黑色" 填入 extra_note。
-3. 匹配优先：如果原文货品名在【参考库】或【历史档案】中有相似项，必须返回库中的标准全称。
+1. 禁止污染名字：货品名称中不要包含数量标识（如 *2, x1）。数量必须单独放在 "qty" 字段。
+2. **完整保留规格**：货品名称中**必须完整保留颜色、型号后缀及关键规格**（例如：原文是 "JY-335C黑色"，name 字段就必须返回 "JY-335C黑色"），严禁私自删减。
+3. 匹配优先：如果原文货品名在【参考库】中有相似项，尽可能对齐库中的标准全称。
 4. 排除干扰：姓名或地址后的编号（如 [1783]）请保留在原字段，不要漏掉。
-5. 价格拆分：如果原文中货品和价格是按顺序排列的（如 A*1+B*2 10+20），请将 10 对应到 A 的 price，20 对应到 B 的 price，不要只返回总价。
+5. 价格拆分：正确关联货品与对应的单价。
 6. 结果格式：直接返回 JSON，不要任何解释文字。"""
 
         try:
@@ -71,10 +71,25 @@ class OrderAIParser:
                 temperature=0.1,
                 top_p=0.1
             )
-            content = response.choices[0].message.content
-            # 清洗渲染层可能带有的 ```json ``` 标记
-            content = re.sub(r"```json\s*|\s*```", "", content)
-            return json.loads(content), None
+            content = response.choices[0].message.content.strip()
+            
+            # 🌟 调试神器：打印 AI 的原话 (确保这次真的能看到)
+            print(f"\n[AI 模块原始回复内容]\n{content}\n" + "—"*20)
+            
+            # 🌟 强力提取 JSON (防止 AI 带废话)
+            json_match = re.search(r'(\{.*\})', content, re.DOTALL)
+            if json_match:
+                content = json_match.group(1)
+            else:
+                content = re.sub(r"```json\s*|\s*```", "", content).strip()
+            
+            res = json.loads(content)
+            # 保底处理：防止收货人为空导致前端判定失败
+            if not res.get('receiver') or not str(res.get('receiver')).strip():
+                res['receiver'] = "未知收货人"
+                
+            return res, None
         except Exception as e:
-            logger.error(f"AI解析失败: {str(e)}")
-            return None, str(e)
+            msg = f"AI 解析转换 JSON 失败: {str(e)}"
+            print(f"❌ {msg}")
+            return None, msg

@@ -1,121 +1,95 @@
 import re
 
-# 快递省份规则表 (由 配置规则.json 彻底迁移至此)
-EXPRESS_TABLE = {
-    "江苏": {"一体称": "德邦特惠", "收银机": "中通（渠道）", "打印机_大": "中通（渠道）", "打印机_小": "中通（渠道）"},
-    "浙江": {"一体称": "德邦特惠", "收银机": "中通（渠道）", "打印机_大": "中通（渠道）", "打印机_小": "中通（渠道）"},
-    "安徽": {"一体称": "德邦特惠", "收银机": "中通（渠道）", "打印机_大": "中通（渠道）", "打印机_小": "中通（渠道）"},
-    "上海": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "圆通（渠道）", "打印机_小": "圆通（渠道）"},
-    "北京": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "圆通（渠道）", "打印机_小": "圆通（渠道）"},
-    "天津": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "中通（渠道）", "打印机_小": "中通（渠道）"},
-    "山东": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "中通（渠道）", "打印机_小": "中通（渠道）"},
-    "河南": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "圆通（渠道）", "打印机_小": "中通（渠道）"},
-    "湖北": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "中通（渠道）", "打印机_小": "中通（渠道）"},
-    "湖南": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "圆通（渠道）", "打印机_小": "中通（渠道）"},
-    "江西": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "中通（渠道）", "打印机_小": "中通（渠道）"},
-    "福建": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "中通（渠道）"},
-    "广东": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "中通（渠道）"},
-    "河北": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "中通（渠道）"},
-    "山西": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "中通（渠道）"},
-    "陕西": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "中通（渠道）"},
-    "广西": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "中通（渠道）"},
-    "贵州": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "中通（渠道）"},
-    "重庆": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "中通（渠道）"},
-    "云南": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "中通（渠道）"},
-    "四川": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "中通（渠道）"},
-    "黑龙江": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "圆通（渠道）"},
-    "吉林": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "圆通（渠道）"},
-    "辽宁": {"一体称": "德邦特惠", "收银机": "圆通（渠道）", "打印机_大": "极兔渠道（新）", "打印机_小": "圆通（渠道）"},
-    "内蒙古": {"一体称": "德邦特惠", "收银机": "德邦特惠", "打印机_大": "极兔渠道（新）", "打印机_小": "极兔渠道（新）"},
-    "宁夏": {"一体称": "德邦特惠", "收银机": "德邦特惠", "打印机_大": "极兔渠道（新）", "打印机_小": "极兔渠道（新）"},
-    "甘肃": {"一体称": "德邦特惠", "收银机": "德邦特惠", "打印机_大": "极兔渠道（新）", "打印机_小": "极兔渠道（新）"},
-    "青海": {"一体称": "德邦特惠", "收银机": "德邦特惠", "打印机_大": "极兔渠道（新）", "打印机_小": "极兔渠道（新）"},
-    "海南": {"一体称": "德邦特惠", "收银机": "德邦特惠", "打印机_大": "极兔渠道（新）", "打印机_小": "极兔渠道（新）"},
-    "新疆": {"一体称": "德邦特惠", "收银机": "德邦特惠", "打印机_大": "极兔渠道（新）", "打印机_小": "极兔渠道（新）"},
-    "西藏": {"一体称": "德邦特惠", "收银机": "德邦特惠", "打印机_大": "极兔渠道（新）", "打印机_小": "极兔渠道（新）"}
-}
-
-# 关键字与排除项 (由库存明细总结)
-CAT_RULES = {
-    "一体称": {
-        "prefixes": ["X"],
-        "excludes": ["XP", "XS"],
-        "keywords": ["一体称", "收银称"]
-    },
-    "收银机": {
-        "prefixes": ["K", "T"],
-        "excludes": ["TX"],
-        "keywords": ["收款机", "收银机", "商超机", "通道机"]
-    }
-}
-
 def normalize_express_name(name):
     if not name or str(name) == "nan": return None
     if name == "圆通": return "圆通（渠道）"
     if name == "中通": return "中通（渠道）"
     return str(name).strip()
 
-def select_express(products, province, address_text, original_text, express_table):
+def select_express(products, province, address_text, raw_text, express_table, config_data, receiver=""):
     """
-    根据货品、省份和地址判定快递
+    根据货品、省份和地址判定快递（克隆自原版精准分拣逻辑）
     """
+    # 核心增强：从原文中扣除地址、姓名
+    text_to_check = raw_text
+    if address_text: text_to_check = text_to_check.replace(address_text, "")
+    if receiver: text_to_check = text_to_check.replace(receiver, "")
+
     # 1. 检查用户手动指定
     manual_keywords = {
-        "德邦": "德邦特惠",
-        "顺丰": "顺丰现付（渠道）",
+        "顺丰": "顺丰现付（渠道）", 
+        "圆通": "圆通（渠道）", 
         "中通": "中通（渠道）",
-        "圆通": "圆通（渠道）",
-        "极兔": "极兔渠道（新）",
-        "到付": "顺丰到付（渠道）"
+        "极兔": "极兔渠道（新）", 
+        "德邦": "德邦特惠", 
+        "工厂": "工厂直发"
     }
+    
     for kw, target in manual_keywords.items():
-        if re.search(rf"(?:发|走|要|快递)[:：\s]*{kw}", original_text):
+        pattern = rf"(?:发|走|指定|要|送|快递|备注)[:：\s]*{kw}"
+        if re.search(pattern, text_to_check):
             return target, f"[用户手动指定] -> {target}"
 
-    if not province:
-        return "中通（渠道）", "未识别到省份，默认发中通"
+    # 2. 匹配省份规则
+    province_rule = None
+    if province:
+        province_rule = express_table.get(province)
+        if not province_rule:
+            for k, v in express_table.items():
+                if province in k or k in province:
+                    province_rule = v; break
 
-    province_rule = express_table.get(province)
     if not province_rule:
-        return "中通（渠道）", f"[{province}] 暂无匹配规则，默认中通"
+        print(f"| 快递判定: 失败 (省份 '{province}' 在表格中找不到规则)")
+        return "中通（渠道）", f"[{province or '未知'}] 暂无匹配规则，默认中通"
 
-    # 2. 品类判定 logic
-    has_scale = False
-    has_cashier = False
-    total_weight = 0
+    # 3. 品类判定 logic
+    has_scale, has_cashier, total_weight = False, False, 0
+    cat_rules = config_data.get("品类判定", {})
+    scale_cfg = cat_rules.get("一体称", {"前缀": ["X"], "关键词": ["一体称"]})
+    reg_cfg = cat_rules.get("收银机", {"前缀": ["K"], "关键词": ["收银机"]})
 
     for p in products:
         info = p.get("productInfo", {}) or {}
         name = str(p.get("matchedName", "") or p.get("searchName", "")).upper()
         qty = int(p.get("qty", 1))
+        # 🌟 修复：跳过无效或空的重量数值
+        try:
+            w = float(info.get("重量", 0))
+            if not import_math().isnan(w):
+                total_weight += w * qty
+        except: pass
         
-        # 一体称判定
-        if (re.match(r'^X\d', name) or name.startswith('X77')) and not any(name.startswith(ex) for ex in CAT_RULES["一体称"]["excludes"]):
+        if any(name.startswith(pref) for pref in scale_cfg.get("前缀", [])) or any(kw in name for kw in scale_cfg.get("关键词", [])):
             has_scale = True
-        
-        # 收银机判定
-        elif (name.startswith('K') or name.startswith('T')) and not any(name.startswith(ex) for ex in CAT_RULES["收银机"]["excludes"]):
+        if any(name.startswith(pref) for pref in reg_cfg.get("前缀", [])) or any(kw in name for kw in reg_cfg.get("关键词", [])):
             if not any(kw in name for kw in ["适配器", "色带", "纸", "摄像头"]):
                 has_cashier = True
 
-        # 重量累加
-        w = info.get("重量", 0)
-        try: total_weight += float(w) * qty
-        except: pass
-
-    # 3. 结果返回 (优先级: 一体称 > 收银机 > 重量分段)
+    # 4. 结果判定逻辑
+    log_reason = f"省份: {province}"
     if has_scale:
-        final = normalize_express_name(province_rule.get("一体称")) or "德邦特惠"
-        return final, f"[{province}][一体称] -> {final}"
-    
-    if has_cashier:
-        final = normalize_express_name(province_rule.get("收银机")) or normalize_express_name(province_rule.get("打印机_大")) or "圆通（渠道）"
-        return final, f"[{province}][收银机] -> {final}"
-
-    # 普通货品分段 (简化版 logic, 后续可精细化)
-    if total_weight >= 5:
-        final = normalize_express_name(province_rule.get("打印机_大")) or "极兔渠道（新）"
-        return final, f"[{province}][>5kg] -> {final}"
+        res_name = normalize_express_name(province_rule.get("一体称")) or "德邦特惠"
+        log_reason += " (判定: 包含一体称/大件)"
+    elif has_cashier:
+        res_name = normalize_express_name(province_rule.get("收银机")) or normalize_express_name(province_rule.get("打印机_大")) or "圆通（渠道）"
+        log_reason += " (判定: 包含收银机/打印机大件)"
     else:
-        final = normalize_express_name(province_rule.get("打印机_小")) or "中通（渠道）"
-        return final, f"[{province}][<5kg] -> {final}"
+        if total_weight <= 2.0:
+            res_name = normalize_express_name(province_rule.get("打印机_小"))
+            log_reason += f" (判定: 普通小件 <=2kg)"
+        elif total_weight <= 5.0:
+            res_name = normalize_express_name(province_rule.get("打印机_中")) or normalize_express_name(province_rule.get("打印机_大"))
+            log_reason += f" (判定: 普通中件 2-5kg)"
+        else:
+            res_name = normalize_express_name(province_rule.get("打印机_大"))
+            log_reason += f" (判定: 大件/重物 >5kg)"
+    
+    final_express = res_name or "中通（渠道）"
+    formatted_reason = f"{log_reason}, 实计总重: {total_weight:.2f}kg"
+    print(f"| 快递判定: 成功 -> {final_express} ({formatted_reason})")
+    return final_express, formatted_reason
+
+def import_math():
+    import math
+    return math

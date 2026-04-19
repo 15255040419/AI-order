@@ -1,4 +1,4 @@
-﻿import os
+import os
 import re
 import json
 import logging
@@ -10,7 +10,7 @@ from flask_cors import CORS
 from core.address import get_province, clean_address
 from core.matcher import find_best_match, get_product_details
 from core.express import select_express
-from core.mapping import DEFAULT_SALESMAN
+from core.processor import ProcessOrderResult
 from core.loader import DataLoader
 from core.customer import find_customer_profile, apply_customer_rules
 from core.ai_parser import OrderAIParser
@@ -24,10 +24,10 @@ CORS(app)
 
 # 初始化数据装载器与AI解析器
 data_loader = DataLoader()
-ZHIPU_API_KEY = "9d63c261e479c3f25608518f83038936.pA8hS4J2E5Z6Gk5g"
+ZHIPU_API_KEY = "7bd6e3eca730448c8ffac4c786cd092a.XfOv2YlnrDp44XO5"
 ai_parser = OrderAIParser(ZHIPU_API_KEY)
 
-@app.route('/api/parse_order', methods=['POST'])
+@app.route('/api/parse', methods=['POST'])
 def parse_order():
     data = request.json
     raw_text = data.get('text', '').strip()
@@ -58,50 +58,79 @@ def parse_order():
             "matchedName": matched or search_name,
             "qty": p.get('qty', 1),
             "price": p.get('price', 0),
-            "productInfo": details
+            "productInfo": details,
+            # 提取详细属性供预览展示
+            "item_no": details.get('货品编号') or details.get('编码') or '—',
+            "spec": details.get('规格') or details.get('型号规格') or '—',
+            "barcode": details.get('条码') or '—'
         })
 
-    # 3. 客户档案自动化
+    # 3. 组装结果并应用业务规则 (调用模块化处理器，注入强力正则锁)
     profile = find_customer_profile(raw_text, data_loader.customer_index)
+    result = ProcessOrderResult(ai_res, raw_text, processed_products, data_loader.config)
     
-    # 4. 组装结果并应用业务规则
-    result = {
-        "receiver": ai_res.get('receiver', ''),
-        "phone": ai_res.get('phone', ''),
-        "address": clean_address(ai_res.get('address', '')),
-        "province": get_province(ai_res.get('address', ''), ai_res.get('province', '')),
-        "products": processed_products,
-        "payment_status": ai_res.get('payment_status', '未付'),
-        "payment_account": ai_res.get('payment_account', ''),
-        "customer_account": ai_res.get('customer_account', ''),
-        "salesman": DEFAULT_SALESMAN,
-        "note": ai_res.get('extra_note', '')
-    }
+    # 细节处理：地址清洗和省份判定
+    result['address'] = clean_address(result['address'] or ai_res.get('address', ''))
+    result['province'] = get_province(result['address'], ai_res.get('province', ''))
     
+    # 应用老客户记忆
     result = apply_customer_rules(result, profile)
 
-    # 5. 快递判定
+    # 4. 快递判定 (集成地址剔除逻辑)
     express_name, express_reason = select_express(
         result['products'], 
         result['province'], 
         result['address'], 
         raw_text,
-        data_loader.express_rules
+        data_loader.express_rules,
+        data_loader.config,
+        receiver=result['receiver']
     )
     result['express'] = express_name
     result['expressReason'] = express_reason
 
-    return jsonify(result)
+    # 🌟 终极打印：这就是发往网页的真实数据
+    print(f"\n[发送给网页的最终数据包]\n收货人: {result['receiver']}, 备注: {result['note']}")
+    print("=" * 50)
 
-@app.route('/api/get_options', methods=['GET'])
+    # 🌟 强力脱敏：洗掉所有 NaN，防止前端崩溃
+    return jsonify(sanitize_data(result))
+
+@app.route('/api/options', methods=['GET'])
 def get_options():
+    # 动态从配置规则中提取选项，确保前端与后端同步
+    config = data_loader.config
     return jsonify({
-        "salesmen": ["仝心科技(admin)", "陆香(12)", "王德龙(21)", "王德成(31)", "汪朋松(30)"],
-        "receipts": ["仝心农商（公账）", "农商银行（成）", "农商（龙）", "财务微信"],
-        "expressOptions": ["中通（渠道）", "圆通（渠道）", "德邦特惠", "极兔渠道（新）", "顺丰现付（渠道）"],
+        "salesmen": list(config.get("业务员映射", {}).values()),
+        "receipts": list(set(config.get("收款账户映射", {}).values())),
+        "expressOptions": config.get("快递选项", []),
         "allProducts": data_loader.all_products
     })
 
+def sanitize_data(obj):
+    """递归清理无效的 JSON 字段 (NaN, Inf)"""
+    import math
+    if isinstance(obj, dict):
+        return {k: sanitize_data(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_data(v) for v in obj]
+    elif isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return 0
+        return obj
+    return obj
+
 if __name__ == '__main__':
-    data_loader.load_all()
-    app.run(port=5000)
+    try:
+        data_loader.load_all()
+        # 允许局域网访问
+        app.run(host='0.0.0.0', port=5000)
+    except Exception as e:
+        import traceback
+        print("\n" + "!"*50)
+        print("❌ 系统启动失败，错误堆栈如下：")
+        print("!"*50)
+        traceback.print_exc()
+        print("!"*50 + "\n")
+    finally:
+        input("\n系统已退出。按回车键关闭窗口...")

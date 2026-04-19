@@ -1,41 +1,45 @@
-# 映射关系规则 (由 配置规则.json 彻底迁移至此)
+import json
+import os
 
-SALESMAN_MAP = {
-    "TX": "仝心科技(admin)",
-    "L": "陆香(12)",
-    "D": "王德龙(21)",
-    "C": "王德成(31)",
-    "W": "汪朋松(30)",
-    "T": "胡正婷(16)",
-    "H": "韩伟(13)",
-    "F": "方同辉(14)"
-}
+# 读取配置规则.json
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', '配置规则.json')
+CONFIG_DATA = {}
 
-RECEIPT_MAP = {
-    "已付仝心农商": "仝心农商（公账）",
-    "已付农商成": "农商银行（成）",
-    "已付农商龙": "农商（龙）",
-    "已付农商": "农商银行（成）",
-    "已付财务微信": "财务微信",
-    "已付安徽仝心": "仝心农商（公账）",
-    "已付仝心": "仝心农商（公账）"
-}
+def load_config():
+    global CONFIG_DATA
+    try:
+        with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+            CONFIG_DATA = json.load(f)
+    except Exception as e:
+        print(f"警告：加载配置文件失败 {e}")
+        CONFIG_DATA = {}
 
-DEFAULT_SALESMAN = "仝心科技(admin)"
+# 初次加载
+load_config()
 
-def get_salesman_by_code(code, default=DEFAULT_SALESMAN):
-    """
-    通过代码获取业务员全名
-    """
+def get_salesman_map():
+    return CONFIG_DATA.get("业务员映射", {})
+
+def get_default_salesman():
+    return CONFIG_DATA.get("默认业务员", "仝心科技(admin)")
+
+def get_receipt_map():
+    return CONFIG_DATA.get("收款账户映射", {})
+
+def get_customer_map():
+    # 原版中也有客户对应关系
+    return CONFIG_DATA.get("客户对应关系", {})
+
+def get_salesman_by_code(code, default=None):
+    if not default: default = get_default_salesman()
     if not code: return default
-    return SALESMAN_MAP.get(str(code).upper(), default)
+    return get_salesman_map().get(str(code).upper(), default)
 
 def find_receipt_account(text):
-    """
-    从文本中匹配收款账户
-    """
     if not text: return ""
-    for kw, account in RECEIPT_MAP.items():
+    receipt_map = get_receipt_map()
+    # 原版中还有对关键词的模糊判定
+    for kw, account in receipt_map.items():
         if kw in text:
             return account
     return ""
