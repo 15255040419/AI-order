@@ -185,9 +185,20 @@
 
         /* 🌟 新增：呼吸灯红色渐变动画 (用于查重) */
         @keyframes breathing-red {
-            0% { border-color: #ef4444; box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
-            50% { border-color: #dc2626; box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), inset 0 0 10px rgba(239, 68, 68, 0.2); }
-            100% { border-color: #ef4444; box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
+            0% {
+                border-color: #ef4444;
+                box-shadow: 0 0 5px rgba(239, 68, 68, 0.4);
+            }
+
+            50% {
+                border-color: #dc2626;
+                box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), inset 0 0 10px rgba(239, 68, 68, 0.2);
+            }
+
+            100% {
+                border-color: #ef4444;
+                box-shadow: 0 0 5px rgba(239, 68, 68, 0.4);
+            }
         }
 
         /* 🌟 精简动画：仅保留核心反馈 */
@@ -205,8 +216,8 @@
 
     <script>
         // 🌟 动态适配后端地址 (支持局域网 IP 访问)
-        const BACKEND_BASE_URL = window.location.origin.includes('http') 
-            ? `${window.location.origin}/api` 
+        const BACKEND_BASE_URL = window.location.origin.includes('http')
+            ? `${window.location.origin}/api`
             : 'http://127.0.0.1:5000/api';
 
         // Toast 通知
@@ -392,7 +403,7 @@
                         const baseTop = char === purple ? 40 : char === black ? 32 : char === orange ? 90 : 40;
                         faceContainer.style.left = `${baseLeft + faceX}px`;
                         faceContainer.style.top = `${baseTop + faceY}px`;
-                        
+
                         // 🌟 如果是黄色小人，让它的横线嘴巴也跟着动 (修正基准点为 54px)
                         if (mouthLine) {
                             mouthLine.style.left = `${54 + faceX * 1.2}px`;
@@ -538,7 +549,7 @@
                                      </select>
                                      <div class="absolute right-2 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
                                 </div>
-                                <p class="text-[10px] text-gray-400 mt-1 px-1 font-medium truncate" title="${order.expressReason || '依据判定'}">
+                                <p class="text-[10px] text-gray-400 mt-1 px-1 font-medium leading-[1.2] line-clamp-2" title="${order.expressReason || '依据判定'}">
                                     💡 ${order.expressReason || 'AI依据规则库判定'}
                                 </p>
                             </div>
@@ -671,7 +682,7 @@
             appState.orders = appState.orders.map(o => {
                 if (o.id === id) {
                     let newOrder = { ...o, [field]: value };
-                    
+
                     // 🌟 联动A: 结算方式设为欠款 -> 清空收款人
                     if (field === 'payMethod' && value === '欠款计应收') {
                         newOrder.receipt = '';
@@ -731,7 +742,7 @@
                             }
                         }
                         if (value && value !== oldMatch && searchName) {
-                            learnCorrection('product', searchName, value, o.account); 
+                            learnCorrection('product', searchName, value, o.account);
                         }
                     }
 
@@ -851,16 +862,16 @@
                     if (resp.ok) {
                         const parsed = await resp.json();
                         console.log('🌟 [100% 原始数据到达]:', parsed);
-                        
+
                         // 🌟 强力更新：不仅合并，还要确保关键字段不被默认值覆盖
                         appState.orders = appState.orders.map(o => {
                             if (o.id === placeholder.id) {
-                                return { 
-                                    ...o, 
-                                    ...parsed, 
-                                    loading: false, 
+                                return {
+                                    ...o,
+                                    ...parsed,
+                                    loading: false,
                                     error: false,
-                                    receiver: parsed.receiver || '未知名字' 
+                                    receiver: parsed.receiver || '未知名字'
                                 };
                             }
                             return o;
@@ -944,7 +955,7 @@
                 const p = String(o.phone || '').trim();
                 if (p) phoneCounts[p] = (phoneCounts[p] || 0) + 1;
             });
-            
+
             // Header
             const header = document.createElement('header');
             header.className = 'border-b border-gray-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50';
