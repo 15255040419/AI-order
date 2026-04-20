@@ -185,15 +185,110 @@
 
         /* 🌟 新增：呼吸灯红色渐变动画 (用于查重) */
         @keyframes breathing-red {
-            0% { border-color: #ef4444; box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
-            50% { border-color: #dc2626; box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), inset 0 0 10px rgba(239, 68, 68, 0.2); }
-            100% { border-color: #ef4444; box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
+            0% {
+                border-color: #ef4444;
+                box-shadow: 0 0 5px rgba(239, 68, 68, 0.4);
+            }
+
+            50% {
+                border-color: #dc2626;
+                box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), inset 0 0 10px rgba(239, 68, 68, 0.2);
+            }
+
+            100% {
+                border-color: #ef4444;
+                box-shadow: 0 0 5px rgba(239, 68, 68, 0.4);
+            }
         }
 
         .duplicate-highlight {
             animation: breathing-red 2s infinite ease-in-out !important;
             border-width: 2px !important;
-            background-color: #fff1f2 !important; /* 浅淡红背景辅助辨识 */
+            background-color: #fff1f2 !important;
+            /* 浅淡红背景辅助辨识 */
+        }
+
+        /* 🌟 新增：规则实验室弹窗样式 */
+        .settings-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .settings-panel {
+            background: white;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            border-radius: 16px;
+            display: flex;
+            flex-child: column;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+        }
+
+        .settings-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
+        }
+
+        .settings-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .settings-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: #f8fafc;
+        }
+
+        .config-section {
+            margin-bottom: 32px;
+        }
+
+        .config-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rule-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .rule-card input {
+            padding: 6px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 13px;
         }
     </style>
 </head>
@@ -202,12 +297,48 @@
     <div id="root"></div>
     <div class="toast-container" id="toast-container"></div>
     <div id="modal-root"></div>
+    <div id="settings-root"></div>
 
     <script>
         // 🌟 动态适配后端地址 (支持局域网 IP 访问)
-        const BACKEND_BASE_URL = window.location.origin.includes('http') 
-            ? `${window.location.origin}/api` 
-            : 'http://127.0.0.1:5000/api';
+        const BACKEND_BASE_URL = window.location.origin.includes('http')
+            ? window.location.origin
+            : 'http://127.0.0.1:5000';
+
+        // --- 拖拽功能助手 ---
+        function makeDraggable(header, target) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            header.onmousedown = (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+                
+                // 🌟 核心修复：点击瞬间锁定当前位置，切换为绝对定位以脱离 Flex 居中限制
+                const rect = target.getBoundingClientRect();
+                target.style.position = 'absolute';
+                target.style.top = rect.top + 'px';
+                target.style.left = rect.left + 'px';
+                target.style.transform = 'none';
+                target.style.margin = '0';
+                
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                
+                document.onmouseup = () => {
+                    document.onmouseup = null;
+                    document.onmousemove = null;
+                    header.style.cursor = 'grab';
+                };
+                document.onmousemove = (e) => {
+                    e.preventDefault();
+                    pos1 = pos3 - e.clientX;
+                    pos2 = pos4 - e.clientY;
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    target.style.top = (target.offsetTop - pos2) + "px";
+                    target.style.left = (target.offsetLeft - pos1) + "px";
+                };
+                header.style.cursor = 'grabbing';
+            };
+        }
 
         // Toast 通知
         const toast = {
@@ -278,8 +409,6 @@
 
         // SVG 图标
         const icons = {
-            checkCircle: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>`,
-            user: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
             sparkles: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364-.707-.707M6.343 6.343l-.707-.707m12.728 0-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/></svg>`,
             send: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: translate(-1px, 1px);"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>`,
             download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`,
@@ -288,8 +417,13 @@
             chevronDown: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
             chevronUp: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>`,
             package: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></svg>`,
-            loader: `<svg class="loader-icon" width="32" height="32" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg>`
+            search: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
+            loader: `<svg class="loader-icon" width="32" height="32" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg>`,
+            settings: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
+            x: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
+            edit: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`
         };
+
 
         // 主应用状态
         let appState = {
@@ -362,7 +496,7 @@
                     <div class="pupil" style="width: 12px; height: 12px; border-radius: 50%; background: #2d2d2d; transition: transform 0.1s;"></div>
                     <div class="pupil" style="width: 12px; height: 12px; border-radius: 50%; background: #2d2d2d; transition: transform 0.1s;"></div>
                 </div>
-                <div class="mouth-line" style="position: absolute; left: 54px; top: 88px; width: 40px; height: 4px; background: #2d2d2d; border-radius: 2px; transition: all 0.7s ease-in-out;"></div>
+                <div style="position: absolute; left: 40px; top: 88px; width: 50px; height: 4px; background: #2d2d2d; border-radius: 2px; transition: all 0.7s ease-in-out;"></div>
             `;
 
             container.appendChild(purple);
@@ -386,18 +520,11 @@
                     char.style.transform = `skewX(${bodySkew}deg)`;
 
                     const faceContainer = char.querySelector('div[style*="transition"]');
-                    const mouthLine = char.querySelector('.mouth-line');
                     if (faceContainer) {
                         const baseLeft = char === purple ? 45 : char === black ? 26 : char === orange ? 82 : 52;
                         const baseTop = char === purple ? 40 : char === black ? 32 : char === orange ? 90 : 40;
                         faceContainer.style.left = `${baseLeft + faceX}px`;
                         faceContainer.style.top = `${baseTop + faceY}px`;
-                        
-                        // 🌟 如果是黄色小人，让它的横线嘴巴也跟着动 (修正基准点为 54px)
-                        if (mouthLine) {
-                            mouthLine.style.left = `${54 + faceX * 1.2}px`;
-                            mouthLine.style.top = `${88 + faceY * 0.8}px`;
-                        }
                     }
 
                     // 眼珠跟随
@@ -443,7 +570,7 @@
         // 订单卡片
         function OrderCard(order, index, globalOptions, onUpdate, onDelete, isDuplicate = false) {
             const card = document.createElement('div');
-            card.className = `bg-white rounded-xl shadow-sm border border-gray-100 p-3 mb-4 transition-all hover:shadow-md ${isDuplicate ? 'duplicate-highlight shadow-xl shadow-red-200' : ''}`;
+            card.className = `bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all card-animate ${isDuplicate ? 'duplicate-highlight shadow-xl shadow-red-200' : ''}`;
             card.style.height = 'fit-content';
 
             if (order.loading) {
@@ -461,163 +588,218 @@
                 card.innerHTML = `
                     <div class="flex items-start justify-between mb-4">
                         <h3 class="text-base font-semibold text-red-900">解析失败</h3>
-                        <button onclick="deleteOrder(${order.id})" class="text-red-600 hover:text-red-800">${icons.trashSmall}</button>
+                        <button onclick="confirmDeleteOrder(${order.id})" class="text-red-600 hover:text-red-800">${icons.trashSmall}</button>
                     </div>
                     <p class="text-sm text-red-600">${order.errType || '无法解析订单'}</p>
                 `;
                 return card;
             }
 
-            // Content
-            card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] font-extrabold text-blue-500 bg-blue-100/50 px-2 py-0.5 rounded-full">#${index + 1}</span>
-                            <h3 class="font-bold text-gray-900 text-xs">${order.receiver || '新订单'}</h3>
+            // Header
+            const header = document.createElement('div');
+            header.className = 'px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50 flex items-center justify-between';
+            header.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-extrabold text-blue-500 bg-blue-100/50 px-2 py-0.5 rounded-full">#${index + 1}</span>
+                    <h3 class="font-bold text-gray-900 text-sm">
+                        ${order.receiver || '未命名订单'}
+                    </h3>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-base font-bold text-blue-600">¥${order.total || 0}</span>
+                    <button onclick="confirmDeleteOrder(${order.id})" class="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full flex items-center justify-center transition-all">
+                        ${icons.trashSmall}
+                    </button>
+                </div>
+            `;
+
+            const content = document.createElement('div');
+            content.className = 'p-3 space-y-3'; // 从 p-4 space-y-4 改为 p-3 space-y-3
+            content.innerHTML = `
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2"> <!-- gap 从 3 改为 2 -->
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">收货人</label>
+                        <input type="text" value="${order.receiver || ''}" onchange="updateOrder(${order.id}, 'receiver', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white font-bold text-gray-700" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">手机号</label>
+                        <input type="text" value="${order.phone || ''}" onchange="updateOrder(${order.id}, 'phone', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white font-bold text-gray-700" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">应收合计</label>
+                        <input type="number" value="${order.total || 0}" onchange="updateOrder(${order.id}, 'total', parseFloat(this.value))" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-bold text-blue-600 bg-white" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">应收邮费</label>
+                        <input type="number" value="${order.freight || 0}" onchange="updateOrder(${order.id}, 'freight', parseFloat(this.value))" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white font-bold text-gray-700" />
+                    </div>
+                    
+                    <div class="space-y-1 col-span-2 md:col-span-3">
+                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">收货地址</label>
+                        <input type="text" value="${order.address || ''}" onchange="updateOrder(${order.id}, 'address', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white font-bold text-gray-700" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">结算方式</label>
+                        <select onchange="updateOrder(${order.id}, 'payMethod', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-bold text-gray-700 ${order.payMethod === '欠款计应收' ? 'bg-yellow-100 border-yellow-300' : 'bg-white'} shadow-sm transition-colors duration-200">
+                            <option value="银行收款" ${order.payMethod === '银行收款' ? 'selected' : ''}>银行收款</option>
+                            <option value="欠款计应收" ${order.payMethod === '欠款计应收' ? 'selected' : ''}>欠款计应收</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="h-4 flex items-center justify-between">
+                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">客户账号</label>
+                            <button onclick="openCustomerSearch(${order.id})" class="text-[10px] text-blue-500 hover:underline">精准搜库</button>
                         </div>
-                        <button onclick="confirmDeleteOrder(${order.id})" class="h-6 w-6 text-gray-300 hover:text-red-500 transition-colors">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        <select onchange="updateCustomerLink(${order.id}, this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-sm font-bold text-gray-700">
+                            <option value="">未关联</option>
+                            ${order.customer_candidates && order.customer_candidates.length > 0 ? `
+                                <optgroup label="✨ 智能匹配候选">
+                                    ${order.customer_candidates.map(c => `<option value="${c.客户账号}" ${window.findBestMatch([c.客户账号], order.account) === c.客户账号 ? 'selected' : ''}>${c.客户账号} (${c.客户名称})</option>`).join('')}
+                                </optgroup>
+                            ` : ''}
+                            ${globalOptions.customers && globalOptions.customers.length > 0 ? `
+                                <optgroup label="👥 所有客户">
+                                    ${globalOptions.customers.map(c => `<option value="${c.客户账号}" ${window.findBestMatch(globalOptions.customers.map(cc => cc.客户账号), order.account) === c.客户账号 ? 'selected' : ''}>${c.客户名称}</option>`).join('')}
+                                </optgroup>
+                            ` : ''}
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="h-4 flex items-center">
+                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">收款账户</label>
+                        </div>
+                        <select onchange="updateOrder(${order.id}, 'receipt', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-bold text-gray-700 ${order.payMethod === '欠款计应收' ? 'bg-yellow-100 border-yellow-300' : 'bg-white'} shadow-sm transition-colors duration-200">
+                            <option value="">选择账户</option>
+                            ${globalOptions.receipts.map(r => `<option value="${r}" ${window.findBestMatch(globalOptions.receipts, order.receipt) === r ? 'selected' : ''}>${r}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="h-4 flex items-center">
+                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">业务员</label>
+                        </div>
+                        <select onchange="updateOrder(${order.id}, 'salesman', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-sm font-bold text-gray-700">
+                            <option value="">选择业务员</option>
+                            ${globalOptions.salesmen.map(s => `<option value="${s}" ${window.findBestMatch(globalOptions.salesmen, order.salesman) === s ? 'selected' : ''}>${s}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="h-4 flex items-center">
+                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">快递</label>
+                        </div>
+                        <select onchange="updateOrder(${order.id}, 'express', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-sm font-bold text-gray-700">
+                            <option value="">自动识别中...</option>
+                            ${(globalOptions.expressOptions || ['顺丰速运', '圆通（渠道）', '中通（渠道）', '申通快递', '韵达快递', '邮政EMS', '德邦特惠', '极兔渠道（新）', '工厂代发', '工厂直发']).map(e => `<option value="${e}" ${order.express === e ? 'selected' : ''}>${e}</option>`).join('')}
+                        </select>
+                        <div class="text-[10px] text-gray-400 mt-1 leading-tight min-h-[1.2em]">${order.express_reason || ''}</div>
+                    </div>
+                </div>
+                <div class="border-t border-dashed border-gray-200 pt-2 space-y-1">
+                    <div class="h-4 flex items-center">
+                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">客服备注</label>
+                    </div>
+                    <textarea 
+                        onchange="updateOrder(${order.id}, 'note', this.value)" 
+                        placeholder="超出范围会自动换下..." 
+                        class="w-full text-sm p-1.5 border border-amber-100 bg-amber-50/30 rounded focus:outline-none focus:bg-white focus:border-blue-400 transition-all resize-none min-h-[2.5rem] font-bold text-gray-800"
+                        rows="1"
+                        oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
+                    >${order.note || ''}</textarea>
+                </div>
+                ${order.products && order.products.length > 0 ? `
+                    <div class="space-y-2">
+                        <button onclick="toggleProducts(${order.id})" class="w-full flex items-center justify-between h-9 px-3 hover:bg-blue-100/50 bg-blue-50/50 rounded-lg transition-all border border-blue-100/30"> <!-- h 从 10 改为 9 -->
+                            <div class="flex items-center gap-2 flex-1 min-w-0">
+                                ${icons.package}
+                                <span class="text-xs font-bold text-gray-700 whitespace-nowrap">货品清单 (${order.products.length} 件):</span>
+                                <span class="text-[13px] font-bold text-blue-600 truncate ml-1">
+                                    ${order.products.map(p => {
+                const icon = p.confidence < 90 ? '<span class="text-amber-500">⚠️</span>' : '';
+                return `${icon}${p.matchedName || p.searchName}*${p.qty}`;
+            }).join(' ')}
+                                </span>
+                            </div>
+                            <span id="chevron-${order.id}" class="text-gray-400 ml-2">${icons.chevronDown}</span>
                         </button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                        <!-- 收货信息组 -->
-                        <div class="space-y-2 col-span-2">
-                            <div class="grid grid-cols-2 gap-2">
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">收货人</label>
-                                    <input type="text" value="${order.receiver || ''}" onchange="updateOrder(${order.id}, 'receiver', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-medium" />
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">手机号</label>
-                                    <input type="text" value="${order.phone || ''}" onchange="updateOrder(${order.id}, 'phone', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-medium" />
-                                </div>
-                            </div>
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">收货地址</label>
-                                <input type="text" value="${order.address || ''}" onchange="updateOrder(${order.id}, 'address', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-medium" />
-                            </div>
-                        </div>
-                        
-                        <!-- 财务组 -->
-                        <div class="space-y-2 border-l border-gray-100 pl-3">
-                             <div class="grid grid-cols-2 gap-2">
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">应收合计</label>
-                                    <input type="number" value="${order.total || 0}" onchange="updateOrder(${order.id}, 'total', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white font-bold text-blue-600" />
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">应收邮费</label>
-                                    <input type="number" value="${order.freight || 0}" onchange="updateOrder(${order.id}, 'freight', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800" />
-                                </div>
-                             </div>
-                             <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">结算方式</label>
-                                <select onchange="updateOrder(${order.id}, 'payMethod', this.value)" class="w-full h-8 text-sm px-2 border border-gray-200 rounded-lg bg-white text-gray-800 font-medium focus:outline-none">
-                                    <option value="银行收款" ${order.payMethod === '银行收款' ? 'selected' : ''}>银行收款</option>
-                                    <option value="欠款计应收" ${order.payMethod === '欠款计应收' ? 'selected' : ''}>欠款计应收</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 pt-2 border-t border-gray-100">
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">客户账号 (可直接修改)</label>
-                            <input type="text" value="${order.account || ''}" onchange="updateOrder(${order.id}, 'account', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold text-gray-800" />
-                        </div>
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">收款账户</label>
-                            <select onchange="updateOrder(${order.id}, 'receipt', this.value)" class="w-full h-8 text-sm px-2 border border-gray-200 rounded-lg bg-white font-bold text-gray-800 focus:outline-none">
-                                <option value="">-- 选择账户 --</option>
-                                ${globalOptions.receipts.map(r => `<option value="${r}" ${window.findBestMatch(globalOptions.receipts, order.receipt) === r ? 'selected' : ''}>${r}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="space-y-1">
-                             <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">业务员</label>
-                             <select onchange="updateOrder(${order.id}, 'salesman', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg bg-white focus:outline-none text-gray-800 font-medium">
-                                <option value="">-- 选择业务员 --</option>
-                                ${order.salesman ? `<option value="${order.salesman}" selected>${order.salesman}</option>` : ''}
-                                ${globalOptions.salesmen.filter(s => s !== order.salesman).map(s => `<option value="${s}">${s}</option>`).join('')}
-                             </select>
-                        </div>
-                    </div>
-
-                    ${order.products && order.products.length > 0 ? `
-                        <div class="space-y-2">
-                            <button onclick="toggleProducts(${order.id})" class="w-full flex items-center justify-between h-9 px-3 hover:bg-blue-50 rounded-md transition-colors">
-                                <div class="flex items-center gap-2 overflow-hidden mr-4">
-                                    ${icons.package}
-                                    <span class="text-xs font-medium text-gray-700 whitespace-nowrap">货品清单 (${order.products.length} 件):</span>
-                                    <span class="text-[11px] text-blue-600 font-bold truncate">
-                                        ${order.products.map(p => `${p.matchedName || p.searchName} * ${p.qty}`).join(', ')}
-                                    </span>
-                                </div>
-                                <span id="chevron-${order.id}">${icons.chevronDown}</span>
-                            </button>
-                            <div id="products-${order.id}" style="display: none;" class="rounded-lg border border-gray-200 overflow-x-auto custom-scrollbar">
-                                <table class="min-w-[700px] w-full text-sm">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-3 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-1/4">货品名称</th>
-                                            <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">货品编号</th>
-                                            <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">条码</th>
-                                            <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">规格</th>
-                                            <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-20">数量</th>
-                                            <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-24">价格</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${order.products.map((p, idx) => `
-                                            <tr class="border-t border-gray-100 hover:bg-gray-50/50 transition-colors">
-                                                <td class="px-3 py-2">
+                        <div id="products-${order.id}" style="display: none;" class="rounded-lg border border-gray-200 overflow-x-auto custom-scrollbar">
+                            <table class="min-w-[700px] w-full text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-1/4">货品名称</th>
+                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">货品编号</th>
+                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">条码</th>
+                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">规格</th>
+                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-20">数量</th>
+                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-24">价格</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${order.products.map((p, idx) => `
+                                        <tr class="border-b border-gray-100 hover:bg-gray-50/50 ${p.confidence < 90 ? 'bg-amber-50/50' : ''} transition-colors">
+                                            <td class="px-3 py-2">
+                                                <div class="relative group">
                                                     <select onchange="updateProduct(${order.id}, ${idx}, 'matchedName', this.value)" class="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 bg-white shadow-sm">
                                                         <option value="">-- 请选择 --</option>
-                                                        
-                                                        <!-- 1. 强制显示当前已匹配项 (确保不为空) -->
-                                                        ${p.matchedName ? `<option value="${p.matchedName}" selected>✅ 已匹配: ${p.matchedName}</option>` : ''}
-                                                        
-                                                        <!-- 2. 候选列表 -->
+                                                        <option value="${p.matchedName}" selected>${p.matchedName}</option>
                                                         ${p.candidates && p.candidates.length > 0 ? `
-                                                            <optgroup label="✨ 智能匹配候选">
+                                                            <optgroup label="✨ 智能候选 (相似度高)">
                                                                 ${p.candidates.filter(c => c !== p.matchedName).map(c => `<option value="${c}">${c}</option>`).join('')}
                                                             </optgroup>
                                                         ` : ''}
-                                                        
-                                                        <!-- 3. 部分全量库 -->
-                                                        ${globalOptions.allProducts && globalOptions.allProducts.length > 0 ? `
-                                                            <optgroup label="📦 所有货品 (仅显示部分)">
-                                                                ${globalOptions.allProducts.slice(0, 50).filter(pn => pn !== p.matchedName).map(pn => `<option value="${pn}">${pn}</option>`).join('')}
+                                                        ${globalOptions.allProducts ? `
+                                                            <optgroup label="📦 所有库存货品 (手动查找)">
+                                                                ${globalOptions.allProducts.slice(0, 500).map(pn => `<option value="${pn}">${pn}</option>`).join('')}
                                                             </optgroup>
                                                         ` : ''}
                                                     </select>
-                                                </td>
-                                                <td class="px-2 py-2 text-xs text-gray-500 font-medium">${p.spec_no || p.item_no || '—'}</td>
-                                                <td class="px-2 py-2 text-xs text-gray-400 font-mono">${p.barcode || '—'}</td>
-                                                <td class="px-2 py-2 text-xs text-gray-500">${p.spec || '—'}</td>
-                                                <td class="px-2 py-2">
-                                                    <input type="number" value="${p.qty}" onchange="updateProduct(${order.id}, ${idx}, 'qty', parseInt(this.value))" class="w-full h-8 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-center" />
-                                                </td>
-                                                <td class="px-2 py-2">
-                                                    <input type="number" value="${p.price || 0}" onchange="updateProduct(${order.id}, ${idx}, 'price', parseFloat(this.value))" class="w-full h-8 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-center font-bold text-blue-600" />
-                                                </td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    <!-- 底部：订单原文回显 (大字版) -->
-                    <div class="mt-3 pt-3 border-t border-dashed border-gray-200">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">📦 发送的订单原文</span>
-                        </div>
-                        <div class="bg-blue-50/20 rounded-lg p-3 text-sm text-gray-700 font-medium whitespace-pre-wrap leading-relaxed border border-blue-100/50 shadow-inner">
-                            ${order.raw || '无原文记录'}
+                                                    <div class="text-[10px] mt-1 px-1 flex items-center justify-between">
+                                                        ${p.source === 'exact' ? '<span class="text-green-600 font-bold">● 精确匹配</span>' :
+                    p.source === 'special_map' ? '<span class="text-blue-600 font-bold">● 记忆纠错</span>' :
+                        p.source === 'fuzzy_engine' ? `<span class="text-amber-500 font-bold">● 智能纠错 (${p.confidence}%)</span>` :
+                            '<span class="text-gray-400">● 未匹配</span>'}
+                                                        <div class="flex items-center gap-2">
+                                                            ${(p.source === 'fuzzy_engine' || p.source === 'none' || !p.source) && p.matchedName && p.matchedName !== '未找到匹配' ? `
+                                                                <button onclick="confirmProductMatch(${order.id}, ${idx})" class="text-green-600 hover:underline font-bold">✓ 确认正确</button>
+                                                            ` : ''}
+                                                            <button onclick="openProductSearch(${order.id}, ${idx})" class="text-blue-500 hover:underline">手动精准搜库</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-2 py-2 text-xs text-gray-500 font-medium">${p.productInfo?.['货品编号'] || '—'}</td>
+                                            <td class="px-2 py-2 text-xs text-gray-400 font-mono">${p.productInfo?.['条码'] || '—'}</td>
+                                            <td class="px-2 py-2 text-xs text-gray-500">${p.productInfo?.['规格'] || '—'}</td>
+                                            <td class="px-2 py-2">
+                                                <input type="number" value="${p.qty}" onchange="updateProduct(${order.id}, ${idx}, 'qty', parseInt(this.value))" class="w-full h-8 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-center" />
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="number" value="${p.price || 0}" onchange="updateProduct(${order.id}, ${idx}, 'price', parseFloat(this.value))" class="w-full h-8 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-center font-bold text-blue-600" />
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
+                ` : ''}
+
+                <!-- 🌟 订单原文展示区 -->
+                <div class="mt-4 pt-3 border-t border-gray-100">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center gap-1.5 px-1">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400/80"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">订单原文</span>
+                        </div>
+                        <div class="px-1">
+                            <div class="bg-gray-50/50 rounded-lg p-2 text-[11px] text-gray-700 font-bold font-mono whitespace-pre-wrap leading-tight border border-gray-100 text-left block overflow-y-auto" style="text-align: left !important; display: block !important; width: 100%; max-height: 100px;">${order.raw || '无原文数据'}</div>
+                        </div>
+                    </div>
+                </div>
+
             `;
+
+            card.appendChild(header);
+            card.appendChild(content);
 
             return card;
         }
@@ -641,6 +823,7 @@
                             matchedName: matchedAccountCode
                         })
                     });
+                    toast.success('🧠 系统已自动同步关联', `下次识别 [${order.account}] 将自动匹配为 [${matchedAccountCode}]`);
                 } catch (e) {
                     console.error('学习同步失败:', e);
                 }
@@ -648,11 +831,26 @@
             updateOrder(orderId, 'account', matchedAccountCode);
         };
 
+        window.confirmProductMatch = async (orderId, productIndex) => {
+            const order = appState.orders.find(o => o.id === orderId);
+            if (!order) return;
+            const p = order.products[productIndex];
+            if (!p || !p.searchName || !p.matchedName || p.matchedName === '未找到匹配') return;
+
+            // 1. 触发学习逻辑
+            await learnCorrection('product', p.searchName, p.matchedName);
+
+            // 2. 更新本地状态，立即变蓝
+            p.source = 'special_map';
+            p.confidence = 100;
+            render();
+        };
+
         window.updateOrder = (id, field, value) => {
             appState.orders = appState.orders.map(o => {
                 if (o.id === id) {
                     let newOrder = { ...o, [field]: value };
-                    
+
                     // 🌟 联动A: 结算方式设为欠款 -> 清空收款人
                     if (field === 'payMethod' && value === '欠款计应收') {
                         newOrder.receipt = '';
@@ -663,15 +861,6 @@
                             newOrder.payMethod = '银行收款'; // 选了账户 -> 银行收款
                         } else {
                             newOrder.payMethod = '欠款计应收'; // 清空账户 -> 欠款计应收
-                        }
-                    }
-
-                    // 🌟 联动C: 快递修改触发学习
-                    if (field === 'express' && value) {
-                        const key = o.receiver || o.address;
-                        if (key && o.express.includes('待定')) {
-                            console.log(`🧠 系统正在同步学习快递规则: ${key} -> ${value}`);
-                            learnCorrection('express', key, value);
                         }
                     }
 
@@ -699,20 +888,14 @@
                         const oldMatch = products[productIndex].matchedName;
                         const searchName = p.name || p.searchName;
                         if (appState.globalOptions.allProductsData) {
+                            // 增强：去除空格并转字符串匹配，保障万无一失
                             const info = appState.globalOptions.allProductsData.find(s =>
                                 String(s['货品名称']).trim() === String(value).trim()
                             );
-                            if (info) {
-                                p.productInfo = info;
-                                // 🌟 关键同步：把查到的原始列信息填进我们的标准字段里
-                                p.spec_no = info['规格编号'] || info['货品代码'] || info['编码'] || info['货品编号'] || '';
-                                p.item_no = info['货品编号'] || info['货品代码'] || info['商品编号'] || '';
-                                p.barcode = info['条码'] || info['货品条码'] || info['商品条码'] || '';
-                                p.spec = info['规格'] || info['货品规格'] || info['型号规格'] || '';
-                            }
+                            if (info) p.productInfo = info;
                         }
                         if (value && value !== oldMatch && searchName) {
-                            learnCorrection('product', searchName, value, o.account); 
+                            learnCorrection('product', searchName, value);
                         }
                     }
 
@@ -732,17 +915,148 @@
             render();
         };
 
-        async function learnCorrection(type, rawName, matchedName, customer) {
+        async function learnCorrection(type, rawName, matchedName) {
             try {
                 await fetch(`${BACKEND_BASE_URL}/learn`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type, rawName, matchedName, customer })
+                    body: JSON.stringify({ type, rawName, matchedName })
                 });
-                console.log(`💡 系统进步 [${type}]：记录了 ${rawName} -> ${matchedName} (客户: ${customer || '未知'})`);
+                console.log(`💡 系统进步 [${type}]：记录了 ${rawName} -> ${matchedName}`);
+                toast.success('🧠 匹配引擎已自我升级', `型号 [${rawName}] 以后将自动纠错为 [${matchedName}]`);
                 fetchOptions();
             } catch (e) { console.error('Learning Failed', e); }
         }
+
+        // --- 🌟 精准搜库逻辑 ---
+        window.openProductSearch = (orderId, productIndex) => {
+            const modalRoot = document.getElementById('modal-root');
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 600px; height: 500px; display: flex; flex-direction: column; position: relative;">
+                    <div id="search-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: grab; padding: 10px; background: #f8fafc; border-radius: 8px 8px 0 0; margin: -20px -20px 16px -20px;">
+                        <h3 style="font-size: 18px; font-weight: 700;">精准货品搜索 <span style="font-size: 10px; font-weight: normal; color: #94a3b8;">(支持拖动)</span></h3>
+                        <button id="close-search-btn" style="border:none; background:none; cursor:pointer;">${icons.x}</button>
+                    </div>
+                    <div style="position: relative; margin-bottom: 12px;">
+                        <div style="position: absolute; left: 12px; top: 10px; color: #94a3b8;">${icons.search}</div>
+                        <input type="text" id="prod-search-input" placeholder="输入型号关键词 (如: K4, X5, 520BG...)" style="width:100%; padding: 8px 12px 8px 36px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;" autocomplete="off" />
+                    </div>
+                    <div id="prod-search-results" class="custom-scrollbar" style="flex: 1; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 8px; background: #f8fafc;">
+                        <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px;">请输入关键词开始搜索...</div>
+                    </div>
+                </div>
+            `;
+            modalRoot.appendChild(modal);
+
+            modal.querySelector('#close-search-btn').onclick = () => modal.remove();
+            const input = modal.querySelector('#prod-search-input');
+            const resultsDiv = modal.querySelector('#prod-search-results');
+            const modalContent = modal.querySelector('.modal-content');
+            const modalHeader = modal.querySelector('#search-modal-header');
+
+            // 🌟 修复：防止点击内部时触发关闭
+            modalContent.onclick = (e) => e.stopPropagation();
+            
+            makeDraggable(modalHeader, modalContent);
+            input.focus();
+
+            input.oninput = (e) => {
+                const kw = e.target.value.trim().toUpperCase();
+                if (!kw) {
+                    resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">请输入关键词...</div>';
+                    return;
+                }
+
+                const matches = appState.globalOptions.allProducts.filter(p => p.toUpperCase().includes(kw)).slice(0, 50);
+                if (matches.length === 0) {
+                    resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">未找到匹配型号</div>';
+                } else {
+                    resultsDiv.innerHTML = matches.map(m => `
+                        <div class="search-result-item" data-val="${m.replace(/"/g, '&quot;')}" style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s;">
+                            <div style="font-size: 13px; font-weight: 600; color: #1e293b;">${m}</div>
+                        </div>
+                    `).join('');
+
+                    resultsDiv.querySelectorAll('.search-result-item').forEach(item => {
+                        item.onclick = () => {
+                            updateProduct(orderId, productIndex, 'matchedName', item.getAttribute('data-val'));
+                            modal.remove();
+                        };
+                        item.onmouseover = () => item.style.background = '#eff6ff';
+                        item.onmouseout = () => item.style.background = 'transparent';
+                    });
+                }
+            };
+        };
+
+        window.openCustomerSearch = (orderId) => {
+            const modalRoot = document.getElementById('modal-root');
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 600px; height: 500px; display: flex; flex-direction: column; position: relative;">
+                    <div id="customer-search-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: grab; padding: 10px; background: #fdf2f8; border-radius: 8px 8px 0 0; margin: -20px -20px 16px -20px;">
+                        <h3 style="font-size: 18px; font-weight: 700;">精准客户搜索 <span style="font-size: 10px; font-weight: normal; color: #94a3b8;">(支持拖动)</span></h3>
+                        <button id="close-cust-search-btn" style="border:none; background:none; cursor:pointer;">${icons.x}</button>
+                    </div>
+                    <div style="position: relative; margin-bottom: 12px;">
+                        <div style="position: absolute; left: 12px; top: 10px; color: #94a3b8;">${icons.search}</div>
+                        <input type="text" id="cust-search-input" placeholder="输入客户名称或账号关键词..." style="width:100%; padding: 8px 12px 8px 36px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;" autocomplete="off" />
+                    </div>
+                    <div id="cust-search-results" class="custom-scrollbar" style="flex: 1; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 8px; background: #fffafb;">
+                        <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px;">请输入名称或账号关键词搜索...</div>
+                    </div>
+                </div>
+            `;
+            modalRoot.appendChild(modal);
+
+            modal.querySelector('#close-cust-search-btn').onclick = () => modal.remove();
+            const input = modal.querySelector('#cust-search-input');
+            const resultsDiv = modal.querySelector('#cust-search-results');
+            const modalContent = modal.querySelector('.modal-content');
+            const modalHeader = modal.querySelector('#customer-search-modal-header');
+
+            // 🌟 修复：防止点击内部时触发关闭（如果未来添加了点击遮罩关闭逻辑）
+            modalContent.onclick = (e) => e.stopPropagation();
+            
+            makeDraggable(modalHeader, modalContent);
+            input.focus();
+
+            input.oninput = (e) => {
+                const kw = e.target.value.trim().toUpperCase();
+                if (!kw) {
+                    resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">请输入关键词...</div>';
+                    return;
+                }
+
+                const matches = (appState.globalOptions.customers || []).filter(c => 
+                    String(c.客户账号).toUpperCase().includes(kw) || 
+                    String(c.客户名称).toUpperCase().includes(kw)
+                ).slice(0, 50);
+
+                if (matches.length === 0) {
+                    resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">未找到匹配客户</div>';
+                } else {
+                    resultsDiv.innerHTML = matches.map(c => `
+                        <div class="search-result-item" data-acc="${c.客户账号}" style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s;">
+                            <div style="font-size: 13px; font-weight: 600; color: #1e293b;">${c.客户名称}</div>
+                            <div style="font-size: 11px; color: #64748b;">账号: ${c.客户账号}</div>
+                        </div>
+                    `).join('');
+
+                    resultsDiv.querySelectorAll('.search-result-item').forEach(item => {
+                        item.onclick = () => {
+                            updateCustomerLink(orderId, item.getAttribute('data-acc'));
+                            modal.remove();
+                        };
+                        item.onmouseover = () => item.style.background = '#fdf2f8';
+                        item.onmouseout = () => item.style.background = 'transparent';
+                    });
+                }
+            };
+        };
 
         window.confirmDeleteOrder = (id) => {
             showConfirmDialog(
@@ -752,6 +1066,18 @@
                     appState.orders = appState.orders.filter(o => o.id !== id);
                     render();
                     toast.success('订单已删除');
+                }
+            );
+        };
+
+        window.clearAllOrders = () => {
+            showConfirmDialog(
+                '确认清空所有列表？',
+                '清空后无法找回，请确认是否继续。',
+                () => {
+                    appState.orders = [];
+                    render();
+                    toast.success('列表已清空');
                 }
             );
         };
@@ -771,10 +1097,9 @@
         // 获取配置
         async function fetchOptions() {
             try {
-                const res = await fetch(`${BACKEND_BASE_URL}/options`);
+                const res = await fetch(`${BACKEND_BASE_URL}/api/options`);
                 if (res.ok) {
                     appState.globalOptions = await res.json();
-                    console.log('✅ 系统配置与库存加载成功');
                 }
             } catch (e) {
                 console.error('Options Failed', e);
@@ -782,14 +1107,12 @@
             }
         }
 
-        // 提交订单文本 (非阻塞异步模式)
+        // 提交订单文本 (分步流式/异步流水线模式)
         async function handleSubmitText(text) {
             const rawText = text.trim();
             if (!rawText) return;
 
-            // 1. 立即清空输入框，准备下一单
             appState.inputText = '';
-            render();
 
             let chunks = rawText.split(/\n\s*\n/).map(t => t.trim()).filter(t => t.length > 5);
             if (chunks.length === 0) chunks = [rawText];
@@ -797,7 +1120,7 @@
             const newOrders = chunks.map(chunk => ({
                 id: Date.now() + Math.random(),
                 raw: chunk,
-                receiver: '识别中...',
+                receiver: '等待解析...',
                 products: [],
                 loading: true,
                 error: false,
@@ -810,17 +1133,19 @@
                 salesman: appState.globalOptions.salesmen[0] || '',
                 receipt: appState.globalOptions.receipts[0] || '',
                 express: '',
+                express_reason: '',
                 note: '',
             }));
 
-            // 2. 把占位符按序追加到列表末尾
+            // 1. 追加占位符
             appState.orders = [...appState.orders, ...newOrders];
             render();
 
-            // 3. 并发解析每一单
-            newOrders.forEach(async (placeholder, idx) => {
+            // 2. 串行流式处理 (逐个解析，获得流水线效果)
+            for (let i = 0; i < newOrders.length; i++) {
+                const placeholder = newOrders[i];
                 try {
-                    const resp = await fetch(`${BACKEND_BASE_URL}/parse`, {
+                    const resp = await fetch(`${BACKEND_BASE_URL}/api/parse`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ text: placeholder.raw }),
@@ -828,7 +1153,6 @@
 
                     if (resp.ok) {
                         const parsed = await resp.json();
-                        // 根据 ID 找到对应的占位符并更新
                         appState.orders = appState.orders.map(o =>
                             o.id === placeholder.id ? { ...o, ...parsed, loading: false } : o
                         );
@@ -840,9 +1164,10 @@
                         o.id === placeholder.id ? { ...o, error: true, receiver: '解析失败', loading: false, errType: e.message } : o
                     );
                 } finally {
-                    render();
+                    render(); // 解析完一个显示一个
                 }
-            });
+            }
+            toast.success(`解析完成，共 ${chunks.length} 条订单`);
         }
 
         // 下载Excel
@@ -853,7 +1178,7 @@
             }
 
             const wb = XLSX.utils.book_new();
-            const orderRows = [['导入编号', '收货人', '手机', '收货地址', '收货人信息(解析)', '应收邮资', '应收合计', '客服备注', '客户账号', '销售渠道名称', '结算方式', '物流公司', '物流单号', '支付单号', '收款账户', '业务员']];
+            const orderRows = [['导入编号', '收货人', '手机', '收货地址', '收货人信息(解析)', '应收邮资', '应收合计', '客服备注', '客户账号', '销售渠道名称', '结算方式', '物流公司', '收款账户', '业务员']];
             const prodRows = [['导入编号(关联订单)', '货品名称', '条码', '货品编号', '规格', '数量', '单价']];
 
             appState.orders.forEach((r, idx) => {
@@ -864,40 +1189,249 @@
                     r.freight || 0, r.total || 0, r.note || '',
                     r.account || '', r.salesChannel || '仝心科技线下批发',
                     r.payMethod || '欠款计应收', r.express || '',
-                    '', '', // 物流单号, 支付单号 (留空)
                     r.receipt || '', r.salesman || ''
                 ]);
-                (r.products || []).forEach(p => {
-                    prodRows.push([
-                        importId,
-                        p.matchedName || p.searchName,
-                        p.productInfo?.['条码'] || '',
-                        p.productInfo?.['货品编号'] || '',
-                        p.productInfo?.['规格'] || '',
-                        p.qty, p.price
-                    ]);
-                });
-            });
 
+                // 🌟 核心修复：将货品信息添加到货品表中
+                if (r.products && r.products.length > 0) {
+                    r.products.forEach(p => {
+                        prodRows.push([
+                            importId, // 关联订单的编号
+                            p.matchedName || p.searchName,
+                            p.productInfo?.['条码'] || '',
+                            p.productInfo?.['货品编号'] || '',
+                            p.productInfo?.['规格'] || '',
+                            p.qty || 1,
+                            p.price || 0
+                        ]);
+                    });
+                }
+            });
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(orderRows), '订单');
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(prodRows), '货品');
-            const dataStr = new Date().toLocaleDateString().replace(/\//g, '_');
-            XLSX.writeFile(wb, `订单分表_${dataStr}_共${appState.orders.length}单.xlsx`);
+            XLSX.writeFile(wb, `订单_${Date.now()}.xlsx`);
+        }
+        // --- 🌟 规则实验室逻辑 ---
+        let currentConfig = null;
 
-            toast.success('订单已下载为Excel文件');
+        async function toggleSettings() {
+            const root = document.getElementById('settings-root');
+            if (root.innerHTML) {
+                root.innerHTML = '';
+                return;
+            }
+
+            toast.success('正在加载系统规则...');
+            try {
+                const res = await fetch(`${BACKEND_BASE_URL}/api/config`);
+                currentConfig = await res.json();
+                renderSettings();
+            } catch (e) {
+                toast.error('加载配置失败');
+            }
         }
 
-        // 清空所有订单
-        function clearAllOrders() {
-            showConfirmDialog(
-                '确认清空所有订单？',
-                '此操作将删除所有已识别的订单，且无法撤销。请确保已下载重要数据。',
-                () => {
-                    appState.orders = [];
-                    render();
-                    toast.success('已清空所有订单');
+        function renderSettings() {
+            const root = document.getElementById('settings-root');
+            const salesmanOptions = appState.globalOptions.salesmen || [];
+            const receiptOptions = appState.globalOptions.receipts || [];
+            const expressOptions = ['顺丰速运', '圆通（渠道）', '中通（渠道）', '申通快递', '韵达快递', '邮政EMS', '德邦特惠', '极兔渠道（新）', '工厂代发', '工厂直发'];
+
+            root.innerHTML = `
+                <div class="settings-overlay">
+                    <div class="settings-panel" style="position: relative; max-width: 950px; width: 95%;">
+                        <div class="settings-header" style="cursor: grab;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 32px; height: 32px; background: #3b82f6; border-radius: 8px; color: white; display: flex; align-items: center; justify-content: center;">
+                                    ${icons.settings}
+                                </div>
+                                <h2 style="font-size: 18px; font-weight: 700; color: #0f172a;">系统规则实验室 <span style="font-size: 10px; font-weight: normal; color: #94a3b8;">(拖拽标题移动)</span></h2>
+                            </div>
+                            <button onclick="toggleSettings()" style="padding: 8px; border-radius: 50%; border: none; background: transparent; cursor: pointer; color: #64748b;">
+                                ${icons.x}
+                            </button>
+                        </div>
+                        <div class="settings-body custom-scrollbar" style="padding: 20px;">
+                            
+                            <!-- 1. 业务员简写映射 -->
+                            <div class="config-section">
+                                <div class="config-title">👤 业务员代码映射 (识别订单尾部的代码)</div>
+                                <div id="salesman-map-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                                    ${Object.entries(currentConfig['业务员映射'] || {}).map(([code, target]) => `
+                                        <div class="rule-card" style="padding: 8px 12px; display: flex; align-items: center; gap: 8px; background: white;">
+                                            <span style="width: 40px; font-weight: 800; color: #3b82f6; font-size: 14px;">${code}</span>
+                                            <select onchange="updateConfig('业务员映射.${code}', this.value)" style="flex: 1; min-width: 0; padding: 4px; font-size: 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                                <option value="">-- 选择业务员 --</option>
+                                                ${salesmanOptions.map(s => `<option value="${s}" ${s === target ? 'selected' : ''}>${s}</option>`).join('')}
+                                            </select>
+                                            <button onclick="deleteConfigKey('业务员映射', '${code}')" style="color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px;">${icons.trashSmall}</button>
+                                        </div>
+                                    `).join('')}
+                                    <div class="rule-card" style="border: 1px dashed #3b82f6; padding: 8px 12px;">
+                                        <input type="text" id="new-sales-code" placeholder="新代码" style="width: 60px; font-size: 12px; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 4px;" />
+                                        <button onclick="addNewMap('业务员映射', 'new-sales-code', '')" style="color: #3b82f6; font-weight: bold; font-size: 12px; margin-left: 10px; background: none; border: none; cursor: pointer;">+ 新增</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. 快递分拣规则 -->
+                            <div class="config-section">
+                                <div class="config-title">🚚 快递分拣规则 (机型 + 重量 + 地区)</div>
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 11px; color: #475569; display: grid; grid-template-columns: 60px 1fr 1fr 1fr 1fr; gap: 8px; text-align: center; font-weight: bold;">
+                                    <span>省份</span>
+                                    <span>1-2kg档</span>
+                                    <span>2-5kg档</span>
+                                    <span>5kg+档</span>
+                                    <span style="color: #3b82f6;">收银机</span>
+                                </div>
+                                <div id="express-rules-container" style="display: flex; flex-direction: column; gap: 6px;">
+                                    ${["江苏", "浙江", "安徽", "上海", "北京", "福建", "广东", "河北", "河南", "湖南", "天津", "湖北", "山东", "山西", "广西", "新疆", "内蒙古", "云南", "贵州", "四川", "宁夏", "吉林", "辽宁", "黑龙江", "海南"].map(prov => {
+                                        const pRules = currentConfig['快递规则']?.['打印机'] || {};
+                                        const rRules = currentConfig['快递规则']?.['收银机']?.['地区映射'] || {};
+                                        
+                                        const renderExpSelect = (cat, sub, p) => {
+                                            const val = cat === '打印机' ? pRules[sub]?.[p] : rRules[p];
+                                            const path = cat === '打印机' ? `快递规则.打印机.${sub}.${p}` : `快递规则.收银机.地区映射.${p}`;
+                                            return `
+                                                <select onchange="updateConfig('${path}', this.value)" style="font-size: 10px; padding: 2px; border-radius: 4px; border: 1px solid #e2e8f0; width: 100%;">
+                                                    <option value="">--</option>
+                                                    ${expressOptions.map(e => `<option value="${e}" ${e === val ? 'selected' : ''}>${e}</option>`).join('')}
+                                                </select>
+                                            `;
+                                        };
+                                        
+                                        return `
+                                            <div class="rule-card" style="display: grid; grid-template-columns: 60px 1fr 1fr 1fr 1fr; gap: 8px; padding: 4px 10px; background: white; border: 1px solid #f1f5f9;">
+                                                <span style="font-weight: 700; font-size: 13px; color: #334155;">${prov}</span>
+                                                ${renderExpSelect('打印机', '1.01-2kg', prov)}
+                                                ${renderExpSelect('打印机', '2kg-5kg', prov)}
+                                                ${renderExpSelect('打印机', '5kg以上', prov)}
+                                                ${renderExpSelect('收银机', '', prov)}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                            
+                            <!-- 3. 收款账户映射 -->
+                            <div class="config-section">
+                                <div class="config-title">💳 付款关键词映射 (识别订单中的支付备注)</div>
+                                <div id="receipt-rules-container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                                    ${Object.entries(currentConfig['收款账户映射'] || {}).map(([key, val]) => `
+                                        <div class="rule-card" style="padding: 8px 12px; display: flex; align-items: center; gap: 10px; background: white;">
+                                            <input type="text" value="${key}" style="width: 120px; background: #f8fafc; font-weight: bold; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px; padding: 2px 6px;" onchange="renameConfigKey('收款账户映射', '${key}', this.value)" />
+                                            <span style="color: #94a3b8;">→</span>
+                                            <select onchange="updateConfig('收款账户映射.${key}', this.value)" style="flex: 1; min-width: 0; padding: 4px; font-size: 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                                <option value="">-- 选择收款账户 --</option>
+                                                ${receiptOptions.map(r => `<option value="${r}" ${r === val ? 'selected' : ''}>${r}</option>`).join('')}
+                                            </select>
+                                            <button onclick="deleteConfigKey('收款账户映射', '${key}')" style="color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px;">${icons.trashSmall}</button>
+                                        </div>
+                                    `).join('')}
+                                    <div class="rule-card" style="border: 1px dashed #3b82f6; padding: 8px 12px;">
+                                        <input type="text" id="new-receipt-key" placeholder="如:已付成" style="width: 100px; font-size: 12px; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 4px;" />
+                                        <button onclick="addNewMap('收款账户映射', 'new-receipt-key', '')" style="color: #3b82f6; font-weight: bold; font-size: 12px; margin-left: 10px; background: none; border: none; cursor: pointer;">+ 新增关键词</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 4. 货品记忆纠错 -->
+                            <div class="config-section">
+                                <div class="config-title">🧠 货品记忆纠错 (手动修正历史)</div>
+                                <div id="special-map-container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                                    ${Object.entries(currentConfig['货品特殊映射'] || {}).map(([key, val]) => `
+                                        <div class="rule-card" style="padding: 8px 12px; display: flex; align-items: center; gap: 8px; background: white;">
+                                            <span style="font-size: 11px; color: #64748b; width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${key}">${key}</span>
+                                            <span style="color: #94a3b8;">→</span>
+                                            <select onchange="updateConfig('货品特殊映射.${key}', this.value)" style="flex: 1; min-width: 0; padding: 4px; font-size: 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                                <option value="">-- 选择标准型号 --</option>
+                                                <option value="${val}" selected>${val}</option>
+                                                ${appState.globalOptions.allProducts.slice(0, 300).map(pn => `<option value="${pn}">${pn}</option>`).join('')}
+                                            </select>
+                                            <button onclick="deleteConfigKey('货品特殊映射', '${key}')" style="color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px;">${icons.trashSmall}</button>
+                                        </div>
+                                    `).slice(0, 60).join('')}
+                                </div>
+                            </div>
+
+                            <!-- 5. 客户账号映射 -->
+                            <div class="config-section">
+                                <div class="config-title">👥 客户账号映射 (手动关联记录)</div>
+                                <div id="customer-map-container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                                    ${Object.entries(currentConfig['客户特殊映射'] || {}).map(([key, val]) => `
+                                        <div class="rule-card" style="padding: 8px 12px; display: flex; align-items: center; gap: 8px; background: white;">
+                                            <span style="font-size: 11px; color: #64748b; width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${key}">${key}</span>
+                                            <span style="color: #94a3b8;">→</span>
+                                            <select onchange="updateConfig('客户特殊映射.${key}', this.value)" style="flex: 1; min-width: 0; padding: 4px; font-size: 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                                <option value="">-- 选择正式账号 --</option>
+                                                <option value="${val}" selected>${val}</option>
+                                                ${(appState.globalOptions.customers || []).slice(0, 200).map(c => `<option value="${c.客户账号}">${c.客户名称} (${c.客户账号})</option>`).join('')}
+                                            </select>
+                                            <button onclick="deleteConfigKey('客户特殊映射', '${key}')" style="color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px;">${icons.trashSmall}</button>
+                                        </div>
+                                    `).slice(0, 60).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="settings-footer">
+                            <button onclick="toggleSettings()" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; font-weight: 600; cursor: pointer;">取消</button>
+                            <button onclick="saveConfig()" style="padding: 10px 24px; border-radius: 8px; border: none; background: #3b82f6; color: white; font-weight: 700; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5);">保存所有规则</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const panel = root.querySelector('.settings-panel');
+            const header = root.querySelector('.settings-header');
+            makeDraggable(header, panel);
+
+            // 辅助功能
+            window.addNewMap = (section, inputId, defaultVal) => {
+                const key = document.getElementById(inputId).value.trim();
+                if(!key) return toast.error('请输入代码或关键词');
+                if(!currentConfig[section]) currentConfig[section] = {};
+                currentConfig[section][key] = defaultVal;
+                renderSettings();
+            };
+            
+            window.renameConfigKey = (section, oldKey, newKey) => {
+                if(oldKey === newKey) return;
+                const val = currentConfig[section][oldKey];
+                delete currentConfig[section][oldKey];
+                currentConfig[section][newKey] = val;
+                renderSettings();
+            };
+        }
+
+        function updateConfig(path, value) {
+            const keys = path.split('.');
+            let current = currentConfig;
+            for (let i = 0; i < keys.length - 1; i++) {
+                current = current[keys[i]];
+            }
+            current[keys[keys.length - 1]] = value;
+        }
+
+        function deleteConfigKey(section, key) {
+            delete currentConfig[section][key];
+            renderSettings();
+        }
+
+        async function saveConfig() {
+            try {
+                const res = await fetch(`${BACKEND_BASE_URL}/api/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentConfig)
+                });
+                if (res.ok) {
+                    toast.success('配置已生效！');
+                    toggleSettings();
+                    fetchOptions();
                 }
-            );
+            } catch (e) {
+                toast.error('保存失败');
+            }
         }
 
         // 渲染应用
@@ -911,7 +1445,7 @@
                 const p = String(o.phone || '').trim();
                 if (p) phoneCounts[p] = (phoneCounts[p] || 0) + 1;
             });
-            
+
             // Header
             const header = document.createElement('header');
             header.className = 'border-b border-gray-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50';
@@ -927,6 +1461,9 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
+                        <button onclick="toggleSettings()" class="h-8 w-8 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all" title="规则实验室">
+                            ${icons.settings}
+                        </button>
                         ${appState.orders.length > 0 ? `
                             <button onclick="clearAllOrders()" class="h-8 px-3 text-sm border border-gray-200 rounded bg-gray-50 hover:bg-gray-100 flex items-center gap-1.5">
                                 ${icons.trash}
