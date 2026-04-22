@@ -20,7 +20,18 @@ def find_best_match(query, choices, data_loader=None, threshold=0.1):
     if not query: return None
     query = str(query).upper().strip()
     
-    # 0. 特殊处理 (预定义别名)
+    # 0. 特殊处理 (预定义别名与学习到的规则)
+    # 优先使用配置中的规则 (含 learn_rules.json 加载的)
+    if data_loader and '货品特殊映射' in data_loader.config:
+        special_map = data_loader.config['货品特殊映射']
+        # 精确匹配别名
+        if query in special_map:
+            return special_map[query]
+        # 包含匹配别名
+        for alias, formal in special_map.items():
+            if str(alias).upper() in query:
+                return formal
+
     for alias, formal in MATCH_RULES["synonyms"].items():
         if alias in query:
             return formal

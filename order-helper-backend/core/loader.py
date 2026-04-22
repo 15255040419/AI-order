@@ -65,6 +65,17 @@ class DataLoader:
                 with open(config_path, 'r', encoding='utf-8') as f:
                     self.config = json.load(f)
                 logger.info("✅ 已加载配置规则.json")
+            
+            # 🌟 额外加载学习到的规则并合并
+            learn_path = os.path.join(self.data_dir, 'learn_rules.json')
+            if os.path.exists(learn_path):
+                with open(learn_path, 'r', encoding='utf-8') as f:
+                    learned = json.load(f)
+                    if 'product' in learned:
+                        self.config.setdefault('货品特殊映射', {}).update(learned['product'])
+                    if 'customer' in learned:
+                        self.config.setdefault('客户特殊映射', {}).update(learned['customer'])
+                logger.info(f"✅ 已合并学习到的规则: 产品({len(learned.get('product',{}))}), 客户({len(learned.get('customer',{}))})")
         except Exception as e: logger.error(f"❌ 配置加载失败: {e}")
 
         # 2. 库存全量

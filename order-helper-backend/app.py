@@ -248,9 +248,40 @@ def parse_order():
 def learn_correction():
     data = request.json
     logger.info(f"🧠 [学习引擎] 收到手动修正: {data}")
-    # 这里可以实现具体的持久化逻辑，例如写入 learn_rules.json
-    # 目前仅记录日志以确认收到
-    return jsonify({"status": "success", "message": "已收到修正，正在优化识别逻辑"})
+    
+    try:
+        rules_path = os.path.join(data_loader.data_dir, 'learn_rules.json')
+        rules = {}
+        if os.path.exists(rules_path):
+            with open(rules_path, 'r', encoding='utf-8') as f:
+                rules = json.load(f)
+        
+        # 按类型存储规则
+        rule_type = data.get('type')
+        if rule_type not in rules: rules[rule_type] = {}
+        
+        raw_name = data.get('rawName')
+        matched_name = data.get('matchedName')
+        
+        if raw_name and matched_name:
+            rules[rule_type][raw_name] = matched_name
+            with open(rules_path, 'w', encoding='utf-8') as f:
+                json.dump(rules, f, ensure_ascii=False, indent=4)
+            
+            # 同步更新内存中的配置
+            if rule_type == 'product':
+                data_loader.config.setdefault('货品特殊映射', {})[raw_name] = matched_name
+            elif rule_type == 'customer':
+                # 客户学习可能涉及更多逻辑，暂时存入配置
+                data_loader.config.setdefault('客户特殊映射', {})[raw_name] = matched_name
+                
+            logger.info(f"✅ 规则已持久化至 learn_rules.json: {raw_name} -> {matched_name}")
+            return jsonify({"status": "success", "message": "学习成功，已永久记录该匹配规则"})
+    except Exception as e:
+        logger.error(f"❌ 学习失败: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+    return jsonify({"status": "error", "message": "无效的数据"}), 400
 
 def sanitize_data(obj):
     import math
