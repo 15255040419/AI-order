@@ -60,11 +60,14 @@ def select_express(products, province, address_text, raw_text, express_table, co
                 total_weight += w * qty
         except: pass
         
-        if any(name.startswith(pref) for pref in scale_cfg.get("前缀", [])) or any(kw in name for kw in scale_cfg.get("关键词", [])):
-            has_scale = True
-        if any(name.startswith(pref) for pref in reg_cfg.get("前缀", [])) or any(kw in name for kw in reg_cfg.get("关键词", [])):
-            if not any(kw in name for kw in ["适配器", "色带", "纸", "摄像头"]):
-                has_cashier = True
+        # 🌟 精准规则：X 或 K 后面跟数字的才是大件
+        if re.match(r'^[XK]\d', name) or any(kw in name for kw in ["一体称", "收银机"]):
+            if name.startswith('X'):
+                has_scale = True
+            elif name.startswith('K'):
+                # 排除配件
+                if not any(kw in name for kw in ["适配器", "色带", "纸", "摄像头"]):
+                    has_cashier = True
 
     # 4. 结果判定逻辑
     log_reason = f"省份: {province}"

@@ -1,4 +1,5 @@
 import difflib
+import re
 
 # 货品排除项与规则
 MATCH_RULES = {
@@ -12,9 +13,9 @@ MATCH_RULES = {
     }
 }
 
-def find_best_match(query, choices, threshold=0.1):
+def find_best_match(query, choices, data_loader=None, threshold=0.1):
     """
-    模糊匹配货品名称
+    模糊匹配货品名称，优先使用数据索引进行精确匹配
     """
     if not query: return None
     query = str(query).upper().strip()
@@ -22,27 +23,40 @@ def find_best_match(query, choices, threshold=0.1):
     # 0. 特殊处理 (预定义别名)
     for alias, formal in MATCH_RULES["synonyms"].items():
         if alias in query:
-            # 如果别名在库里，直接返回
-            if formal in choices: return formal
+            return formal
 
-    # 1. 精确匹配
+    # 1. 尝试从 DataLoader 的索引中直接查找 (极其快速)
+    if data_loader:
+        # 1.1 精确匹配规格编号 (Item No)
+        if query in data_loader.item_no_index:
+            return data_loader.item_no_index[query].get('货品名称')
+        
+        # 1.2 精确匹配货品名称
+        if query in data_loader.product_name_index:
+            return query
+
+    # 2. 精确匹配 choices 列表
     if query in choices: return query
     
-    # 2. 包含匹配 (优先处理)
-    potential_matches = [c for c in choices if query in str(c).upper()]
-    if potential_matches:
-        return min(potential_matches, key=len) # 选名字最短的那个，通常是基准型号
+    # 3. 包含匹配 (优先处理)
+    # 过滤掉一些太短的 query，防止误伤 (比如 "1" 匹配到所有带 1 的产品)
+    if len(query) >= 2:
+        potential_matches = [c for c in choices if query in str(c).upper()]
+        if potential_matches:
+            return min(potential_matches, key=len) # 选名字最短的那个，通常是基准型号
 
-    # 3. 模糊匹配 (difflib)
+    # 4. 模糊匹配 (difflib)
     matches = difflib.get_close_matches(query, choices, n=1, cutoff=threshold)
     return matches[0] if matches else None
 
-def get_product_details(matched_name, inventory_list):
+def get_product_details(matched_name, data_loader):
     """
-    从库存列表获取详细信息 (条码, 编号, 重量等)
+    从 DataLoader 索引获取详细信息
     """
-    if not matched_name: return {}
-    for item in inventory_list:
-        if item.get("货品名称") == matched_name:
-            return item
+    if not matched_name or not data_loader: return {}
+    
+    # 优先从货品名称索引取
+    if matched_name in data_loader.product_name_index:
+        return data_loader.product_name_index[matched_name]
+        
     return {}
