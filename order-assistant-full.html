@@ -207,6 +207,390 @@
             background-color: #991b1b !important;
             color: white !important;
         }
+
+        :root {
+            --cc-bg: #f7f7f4;
+            --cc-surface: #ffffff;
+            --cc-surface-2: #f0f0ea;
+            --cc-surface-3: #e8e6dc;
+            --cc-border: #d9d6c8;
+            --cc-border-soft: #ebe8de;
+            --cc-text: #1f211c;
+            --cc-muted: #747064;
+            --cc-faint: #9b9688;
+            --cc-accent: #d97706;
+            --cc-accent-2: #0f766e;
+            --cc-danger: #b91c1c;
+            --cc-warning-bg: #fff7d6;
+            --cc-warning-border: #f2d16b;
+            --cc-shadow: 0 16px 40px rgba(31, 33, 28, 0.08);
+            --cc-mono: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+        }
+
+        html[data-theme="dark"] {
+            color-scheme: dark;
+            --cc-bg: #171814;
+            --cc-surface: #20211d;
+            --cc-surface-2: #282923;
+            --cc-surface-3: #303128;
+            --cc-border: #3d3c32;
+            --cc-border-soft: #2e2f28;
+            --cc-text: #f1efe3;
+            --cc-muted: #b4ae9d;
+            --cc-faint: #847f70;
+            --cc-accent: #f2a93b;
+            --cc-accent-2: #51c5b3;
+            --cc-danger: #fb7185;
+            --cc-warning-bg: #3a321d;
+            --cc-warning-border: #7c6322;
+            --cc-shadow: 0 18px 46px rgba(0, 0, 0, 0.36);
+        }
+
+        html[data-theme="light"] {
+            color-scheme: light;
+        }
+
+        body {
+            background: var(--cc-bg) !important;
+            color: var(--cc-text);
+        }
+
+        .cc-shell {
+            min-height: 100vh;
+            background:
+                linear-gradient(180deg, rgba(217, 119, 6, 0.06), transparent 260px),
+                var(--cc-bg);
+        }
+
+        .cc-header {
+            border-bottom: 1px solid var(--cc-border);
+            background: color-mix(in srgb, var(--cc-surface) 92%, transparent);
+            backdrop-filter: blur(18px);
+        }
+
+        .cc-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--cc-text);
+            color: var(--cc-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--cc-mono);
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .cc-title {
+            color: var(--cc-text);
+            letter-spacing: 0;
+        }
+
+        .cc-subtitle,
+        .cc-muted {
+            color: var(--cc-muted);
+        }
+
+        .cc-chip {
+            height: 30px;
+            padding: 0 12px;
+            border: 1px solid var(--cc-border);
+            border-radius: 7px;
+            background: var(--cc-surface-2);
+            color: var(--cc-text);
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-weight: 650;
+            font-family: inherit;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+        }
+
+        .cc-chip:hover {
+            background: var(--cc-surface-3);
+            transform: translateY(-1px);
+        }
+
+        .cc-chip-danger {
+            color: var(--cc-danger);
+        }
+
+        .cc-chip-primary {
+            background: var(--cc-text);
+            color: var(--cc-bg);
+            border-color: var(--cc-text);
+        }
+
+        .cc-card {
+            background: var(--cc-surface) !important;
+            border: 1px solid var(--cc-border) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--cc-shadow);
+            color: var(--cc-text);
+            overflow: hidden;
+        }
+
+        .cc-card-head {
+            background: var(--cc-surface-2);
+            border-bottom: 1px solid var(--cc-border);
+        }
+
+        .cc-input-area {
+            border-top: 1px solid var(--cc-border);
+            background: color-mix(in srgb, var(--cc-surface) 94%, transparent);
+            backdrop-filter: blur(18px);
+        }
+
+        .cc-composer {
+            background: var(--cc-surface);
+            border: 1px solid var(--cc-border);
+            border-radius: 10px;
+            box-shadow: var(--cc-shadow);
+        }
+
+        .cc-send {
+            background: var(--cc-accent);
+            color: #171814;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 800;
+            transition: transform 0.15s ease, filter 0.15s ease;
+        }
+
+        .cc-send:hover {
+            filter: brightness(1.05);
+            transform: translateY(-1px);
+        }
+
+        .cc-welcome {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 48px 18px;
+        }
+
+        .cc-terminal {
+            background: var(--cc-surface);
+            border: 1px solid var(--cc-border);
+            border-radius: 10px;
+            box-shadow: var(--cc-shadow);
+            overflow: hidden;
+        }
+
+        .cc-terminal-bar {
+            background: var(--cc-surface-2);
+            border-bottom: 1px solid var(--cc-border);
+            padding: 10px 14px;
+            font-family: var(--cc-mono);
+            color: var(--cc-muted);
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .cc-terminal-body {
+            padding: 20px;
+            font-family: var(--cc-mono);
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .cc-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: var(--cc-accent);
+            vertical-align: -3px;
+            animation: blink 1s steps(2, start) infinite;
+        }
+
+        @keyframes blink {
+            to { visibility: hidden; }
+        }
+
+        input,
+        textarea,
+        select {
+            background-color: var(--cc-surface) !important;
+            color: var(--cc-text) !important;
+            border-color: var(--cc-border) !important;
+            border-radius: 7px !important;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--cc-accent) !important;
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--cc-accent) 20%, transparent) !important;
+        }
+
+        label,
+        th {
+            color: var(--cc-muted) !important;
+        }
+
+        .bg-white,
+        .bg-gray-50,
+        .bg-blue-50\/70,
+        .bg-blue-50\/50,
+        .bg-gray-50\/50,
+        .bg-gray-50\/30 {
+            background-color: var(--cc-surface) !important;
+        }
+
+        .border-gray-100,
+        .border-gray-200,
+        .border-blue-100,
+        .border-dashed {
+            border-color: var(--cc-border-soft) !important;
+        }
+
+        .text-gray-900,
+        .text-gray-800,
+        .text-gray-700,
+        .text-blue-800,
+        .text-blue-600 {
+            color: var(--cc-text) !important;
+        }
+
+        .text-gray-600,
+        .text-gray-500,
+        .text-gray-400 {
+            color: var(--cc-muted) !important;
+        }
+
+        table thead {
+            background: var(--cc-surface-2) !important;
+        }
+
+        table tbody {
+            background: var(--cc-surface) !important;
+        }
+
+        .toast,
+        .modal-content {
+            background: var(--cc-surface) !important;
+            border-color: var(--cc-border) !important;
+            color: var(--cc-text);
+        }
+
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.62);
+        }
+
+        .search-item:hover {
+            background: var(--cc-surface-2) !important;
+        }
+
+        .cc-review {
+            background: var(--cc-warning-bg) !important;
+            border-color: var(--cc-warning-border) !important;
+        }
+
+        .cc-select {
+            position: relative;
+        }
+
+        .cc-select-button {
+            width: 100%;
+            height: 32px;
+            border: 1px solid var(--cc-border);
+            border-radius: 7px;
+            background: var(--cc-surface);
+            color: var(--cc-text);
+            padding: 0 28px 0 9px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .cc-select-button::after {
+            content: "";
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            width: 7px;
+            height: 7px;
+            border-right: 1.8px solid var(--cc-muted);
+            border-bottom: 1.8px solid var(--cc-muted);
+            transform: translateY(-65%) rotate(45deg);
+            pointer-events: none;
+        }
+
+        .cc-select-menu {
+            position: absolute;
+            z-index: 100;
+            left: 0;
+            right: 0;
+            top: calc(100% + 6px);
+            max-height: 240px;
+            overflow-y: auto;
+            border: 1px solid var(--cc-border);
+            border-radius: 9px;
+            background: var(--cc-surface);
+            box-shadow: var(--cc-shadow);
+            padding: 5px;
+        }
+
+        .cc-select-option {
+            min-height: 30px;
+            border-radius: 6px;
+            padding: 6px 8px;
+            color: var(--cc-text);
+            font-size: 13px;
+            font-weight: 650;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .cc-select-option:hover,
+        .cc-select-option.active {
+            background: var(--cc-surface-2);
+        }
+
+        .cc-select-option.active::after {
+            content: "✓";
+            color: var(--cc-accent);
+            font-weight: 900;
+        }
+
+        .bg-gradient-to-r,
+        .bg-gradient-to-br {
+            background-image: none !important;
+        }
+
+        .shadow-lg,
+        .shadow-sm,
+        .shadow-md,
+        .shadow-xl {
+            box-shadow: none !important;
+        }
+
+        .hover\:bg-blue-100:hover,
+        .hover\:bg-blue-50:hover,
+        .hover\:bg-gray-50\/50:hover {
+            background-color: var(--cc-surface-2) !important;
+        }
+
+        html[data-theme="dark"] select {
+            background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23b4ae9d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        }
+
+        .note-textarea {
+            min-height: 40px;
+            height: 40px;
+            line-height: 22px;
+            padding-top: 9px !important;
+            padding-bottom: 9px !important;
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 
@@ -263,8 +647,8 @@
                     <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">${title}</h3>
                     <p style="color: #6b7280; margin-bottom: 24px;">${description}</p>
                     <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                        <button id="cancel-btn" style="padding: 8px 16px; border: 1px solid #d1d5db; border-radius: 6px; background: white; cursor: pointer;">取消</button>
-                        <button id="confirm-btn" style="padding: 8px 16px; border: none; border-radius: 6px; background: #3b82f6; color: white; cursor: pointer;">确认</button>
+                        <button id="cancel-btn" class="cc-chip" style="height: 40px; min-width: 88px; justify-content: center; cursor: pointer;">取消</button>
+                        <button id="confirm-btn" class="cc-chip cc-chip-primary" style="height: 40px; min-width: 88px; justify-content: center; cursor: pointer;">确认</button>
                     </div>
                 </div>
             `;
@@ -323,8 +707,42 @@
             },
             isProcessing: false,
             inputText: '',
-            mousePosition: { x: 0, y: 0 }
+            mousePosition: { x: 0, y: 0 },
+            theme: localStorage.getItem('order-helper-theme') || 'dark',
+            openDropdown: ''
         };
+
+        function escAttr(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function customSelect(key, field, value, options, placeholder, orderId) {
+            const cleanOptions = [...new Set((options || []).filter(v => v !== undefined && v !== null))];
+            const current = value || '';
+            const isOpen = appState.openDropdown === key;
+            const allOptions = cleanOptions.includes(current) || !current ? cleanOptions : [current, ...cleanOptions];
+            return `
+                <div class="cc-select" onclick="event.stopPropagation()">
+                    <button type="button" class="cc-select-button" onclick="toggleDropdown('${key}')">
+                        ${escAttr(current || placeholder || '-- 请选择 --')}
+                    </button>
+                    ${isOpen ? `
+                        <div class="cc-select-menu">
+                            <div class="cc-select-option ${!current ? 'active' : ''}" onclick="selectOrderOption(${orderId}, '${field}', '')">${escAttr(placeholder || '-- 请选择 --')}</div>
+                            ${allOptions.map(opt => `
+                                <div class="cc-select-option ${opt === current ? 'active' : ''}" onclick="selectOrderOption(${orderId}, '${field}', decodeURIComponent('${encodeURIComponent(opt)}'))">
+                                    <span>${escAttr(opt)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
 
         // 动画角色组件
         function AnimatedCharacters() {
@@ -441,20 +859,36 @@
         // 欢迎屏幕
         function WelcomeScreen() {
             const container = document.createElement('div');
-            container.className = 'flex flex-col items-center justify-center px-4';
+            container.className = 'cc-welcome';
             container.style.minHeight = 'calc(100vh - 200px)';
-
-            const charactersDiv = document.createElement('div');
-            charactersDiv.style.marginBottom = '2rem';
-            charactersDiv.appendChild(AnimatedCharacters());
-
-            const textDiv = document.createElement('p');
-            textDiv.className = 'text-center max-w-md text-lg font-bold animated-gradient-text';
-            textDiv.style.lineHeight = '1.75';
-            textDiv.textContent = '粘贴订单文本,AI 自动识别收货信息、货品明细，助您快速完成订单录入';
-
-            container.appendChild(charactersDiv);
-            container.appendChild(textDiv);
+            container.innerHTML = `
+                <div class="cc-terminal">
+                    <div class="cc-terminal-bar">
+                        <span>order-helper / rules-engine</span>
+                        <span>${new Date().toLocaleDateString()}</span>
+                    </div>
+                    <div class="cc-terminal-body">
+                        <div><span style="color: var(--cc-accent);">></span> 粘贴订单原文，系统开始拆单</div>
+                        <div><span style="color: var(--cc-accent);">></span> AI 只切割文本，货品和快递由本地规则查表</div>
+                        <div><span style="color: var(--cc-accent);">></span> 普通货品查规格编号，收银机/一体称查组合装货品名称</div>
+                        <div><span style="color: var(--cc-accent);">></span> 查不到会标记待确认，不自动猜 <span class="cc-cursor"></span></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                    <div class="cc-card p-4">
+                        <div class="text-xs cc-muted font-bold mb-1">PRODUCT</div>
+                        <div class="text-sm font-bold">精确查表，不走模糊匹配</div>
+                    </div>
+                    <div class="cc-card p-4">
+                        <div class="text-xs cc-muted font-bold mb-1">EXPRESS</div>
+                        <div class="text-sm font-bold">按省份、重量、品类判定</div>
+                    </div>
+                    <div class="cc-card p-4">
+                        <div class="text-xs cc-muted font-bold mb-1">EXPORT</div>
+                        <div class="text-sm font-bold">订单表和货品表一键导出</div>
+                    </div>
+                </div>
+            `;
 
             return container;
         }
@@ -462,7 +896,7 @@
         // 订单卡片
         function OrderCard(order, index, globalOptions, onUpdate, onDelete, isDuplicate = false) {
             const card = document.createElement('div');
-            card.className = `bg-white rounded-xl shadow-sm border border-gray-100 p-3 mb-3 transition-all hover:shadow-md ${isDuplicate ? 'duplicate-highlight shadow-xl shadow-red-200' : ''}`;
+            card.className = `cc-card p-3 mb-3 transition-all ${isDuplicate ? 'duplicate-highlight' : ''}`;
             card.style.height = 'fit-content';
 
             if (order.loading) {
@@ -494,12 +928,12 @@
 
             // Content
             card.innerHTML = `
-                    <div class="flex justify-between items-center -mx-3 -mt-3 mb-3 px-4 py-2 bg-white border-b border-gray-100 rounded-t-xl border-l-[6px] border-l-blue-600 shadow-sm">
+                    <div class="cc-card-head flex justify-between items-center -mx-3 -mt-3 mb-3 px-4 py-2 border-l-[5px]" style="border-left-color: var(--cc-accent);">
                         <div class="flex items-center gap-4">
-                            <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-sm">#${index + 1}</span>
-                            <h3 class="font-bold text-gray-900 text-lg tracking-tight">${order.receiver || '新订单'}</h3>
+                            <span class="text-[10px] font-black px-2 py-0.5 rounded-md" style="background: var(--cc-text); color: var(--cc-bg);">#${index + 1}</span>
+                            <h3 class="font-bold text-lg tracking-tight">${order.receiver || '新订单'}</h3>
                         </div>
-                        <button onclick="confirmDeleteOrder(${order.id})" class="h-8 w-8 flex items-center justify-center text-red-700 bg-red-50 hover:bg-red-800 hover:text-white rounded-full transition-all border border-red-100">
+                        <button onclick="confirmDeleteOrder(${order.id})" class="cc-chip cc-chip-danger h-8 w-8 !px-0 justify-center">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                         </button>
                     </div>
@@ -539,29 +973,17 @@
                             </div>
                             <div class="space-y-0.5">
                                 <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">业务员</label>
-                                <div class="relative">
-                                     <select onchange="updateOrder(${order.id}, 'salesman', this.value)" class="w-full h-8 text-[13px] px-2 pr-6 border border-gray-200 rounded-lg bg-white focus:outline-none text-gray-800 appearance-none cursor-pointer">
-                                        <option value="">-- 请选择 --</option>
-                                        ${order.salesman ? `<option value="${order.salesman}" selected>${order.salesman}</option>` : ''}
-                                        ${globalOptions.salesmen.filter(s => s !== order.salesman).map(s => `<option value="${s}">${s}</option>`).join('')}
-                                     </select>
-                                     <div class="absolute right-1.5 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
-                                </div>
+                                ${customSelect(`order-${order.id}-salesman`, 'salesman', order.salesman || '', globalOptions.salesmen, '-- 请选择 --', order.id)}
                             </div>
-                            <div class="space-y-0.5">
+                            <div class="space-y-0.5 relative">
                                 <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">快递公司</label>
-                                <div class="relative">
-                                     <select onchange="updateOrder(${order.id}, 'express', this.value)" class="w-full h-8 text-[13px] px-2 pr-6 border border-gray-200 rounded-lg bg-white focus:outline-none text-blue-600 font-black appearance-none cursor-pointer">
-                                        <option value="">-- 自动计算 --</option>
-                                        ${(() => {
+                                ${(() => {
                     const options = [...globalOptions.expressOptions];
                     if (order.express && !options.includes(order.express)) options.push(order.express);
-                    return options.map(e => `<option value="${e}" ${order.express === e ? 'selected' : ''}>${e}</option>`).join('');
+                    return customSelect(`order-${order.id}-express`, 'express', order.express || '', options, '-- 自动计算 --', order.id);
                 })()}
-                                     </select>
-                                     <div class="absolute right-1.5 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
-                                </div>
-                                <p class="text-[10px] text-gray-400 mt-0.5 px-1 font-medium leading-[1.1] line-clamp-1" title="${order.expressReason || '依据判定'}">
+                                <div class="h-[14px] w-full"></div>
+                                <p class="absolute right-0 bottom-0 text-[10px] text-gray-400 mt-0.5 px-1 font-medium leading-[1.1] whitespace-nowrap z-10 pointer-events-none" title="${order.expressReason || '依据判定'}">
                                     💡 ${order.expressReason || 'AI依据规则库判定'}
                                 </p>
                             </div>
@@ -571,34 +993,22 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div class="space-y-0.5">
                                 <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">结算方式</label>
-                                <div class="relative">
-                                    <select onchange="updateOrder(${order.id}, 'payMethod', this.value)" class="w-full h-8 text-[13px] px-2 pr-6 border border-gray-200 rounded-lg bg-white text-gray-800 font-bold focus:outline-none appearance-none cursor-pointer">
-                                        <option value="银行收款" ${order.payMethod === '银行收款' ? 'selected' : ''}>银行收款</option>
-                                        <option value="欠款计应收" ${order.payMethod === '欠款计应收' ? 'selected' : ''}>欠款计应收</option>
-                                    </select>
-                                    <div class="absolute right-1.5 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
-                                </div>
+                                ${customSelect(`order-${order.id}-payMethod`, 'payMethod', order.payMethod || '欠款计应收', ['银行收款', '欠款计应收'], '-- 请选择 --', order.id)}
                             </div>
                             <div class="space-y-0.5">
                                 <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">收款账户</label>
-                                <div class="relative">
-                                    <select onchange="updateOrder(${order.id}, 'receipt', this.value)" class="w-full h-8 text-[13px] px-2 pr-6 border border-gray-200 rounded-lg bg-white font-bold text-gray-800 focus:outline-none appearance-none cursor-pointer">
-                                        <option value="">-- 选择账户 --</option>
-                                        ${(() => {
+                                ${(() => {
                     const receipts = [...globalOptions.receipts];
                     if (order.receipt && !receipts.includes(order.receipt)) receipts.push(order.receipt);
-                    return receipts.map(r => `<option value="${r}" ${order.receipt === r ? 'selected' : ''}>${r}</option>`).join('');
+                    return customSelect(`order-${order.id}-receipt`, 'receipt', order.receipt || '', receipts, '-- 选择账户 --', order.id);
                 })()}
-                                    </select>
-                                    <div class="absolute right-1.5 inset-y-0 flex items-center text-gray-400 pointer-events-none scale-75">${icons.chevronDown}</div>
-                                </div>
                             </div>
                         </div>
 
                         <!-- 第五排：备注 (单独一行，自动换行) -->
                         <div class="space-y-0.5">
                              <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">客户备注 / 细节说明</label>
-                             <textarea onchange="updateOrder(${order.id}, 'note', this.value)" class="w-full min-h-[40px] text-[13px] px-2 py-1.5 border border-gray-200 rounded-lg bg-blue-50/50 text-blue-800 font-bold focus:outline-none resize-none overflow-hidden leading-relaxed" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">${order.note || ''}</textarea>
+                             <textarea onchange="updateOrder(${order.id}, 'note', this.value)" class="note-textarea w-full text-[13px] px-3 border border-gray-200 rounded-lg bg-blue-50/50 text-blue-800 font-bold focus:outline-none resize-none overflow-hidden" oninput="autoResizeNote(this)">${order.note || ''}</textarea>
                         </div>
 
                         ${order.products && order.products.length > 0 ? `
@@ -608,7 +1018,7 @@
                                         <span class="text-blue-600">${icons.package}</span>
                                         <span class="text-xs font-bold text-gray-700">货品清单 (${order.products.length} 件):</span>
                                         <span class="text-xs text-blue-800 font-black truncate max-w-[450px]">
-                                            ${order.products.map(p => `${p.matchedName || p.searchName} * ${p.qty}`).join(', ')}
+                                            ${order.products.map(p => `${p.needsReview ? '[待确认] ' : ''}${p.matchedName || p.searchName} * ${p.qty}`).join(', ')}
                                         </span>
                                     </div>
                                     <span id="chevron-${order.id}" class="text-blue-400 group-hover:text-blue-600">${icons.chevronDown}</span>
@@ -626,12 +1036,12 @@
                                         </thead>
                                         <tbody class="bg-white">
                                             ${order.products.map((p, idx) => `
-                                                <tr class="border-t border-gray-100 hover:bg-gray-50/50 transition-colors">
+                                                <tr class="border-t ${p.needsReview ? 'cc-review' : 'border-gray-100'} hover:bg-gray-50/50 transition-colors">
                                                     <td class="px-3 py-2">
                                                         <div class="flex gap-1.5 items-center">
-                                                            <select onchange="updateProduct(${order.id}, ${idx}, 'matchedName', this.value)" class="flex-1 text-[13px] px-2 py-1 border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+                                                            <select onchange="updateProduct(${order.id}, ${idx}, 'matchedName', this.value)" class="flex-1 text-[13px] px-2 py-1 border ${p.needsReview ? 'border-amber-400' : 'border-gray-200'} rounded-md focus:outline-none focus:border-blue-500 bg-white shadow-sm">
                                                                 <option value="">-- 请选择 --</option>
-                                                                ${p.matchedName ? `<option value="${p.matchedName}" selected>✅ ${p.matchedName}</option>` : ''}
+                                                                ${p.matchedName ? `<option value="${p.matchedName}" selected>${p.matchedName}</option>` : ''}
                                                                 ${p.candidates ? p.candidates.filter(c => c !== p.matchedName).map(c => `<option value="${c}">${c}</option>`).join('') : ''}
                                                                 <optgroup label="基础库项">
                                                                     ${(globalOptions.allProducts || []).slice(0, 10).map(pn => `<option value="${pn}">${pn}</option>`).join('')}
@@ -641,6 +1051,7 @@
                                                                 ${icons.search}
                                                             </button>
                                                         </div>
+                                                        ${p.needsReview ? `<div class="mt-1 text-[11px] font-bold text-amber-700">原文：${p.searchName || '--'}，未在两个货品表中精确命中，请人工选择。</div>` : `<div class="mt-1 text-[10px] text-gray-400">原文：${p.searchName || '--'} · ${p.matchType || '精确匹配'}</div>`}
                                                     </td>
                                                     <td class="px-2 py-2 text-[11px] text-gray-500 font-mono">${p.spec_no || p.item_no || '--'}</td>
                                                     <td class="px-2 py-2 text-[11px] text-gray-400 font-mono">${p.barcode || '--'}</td>
@@ -697,6 +1108,27 @@
                 }
             }
             updateOrder(orderId, 'account', matchedAccountCode);
+        };
+
+        window.toggleTheme = () => {
+            appState.theme = appState.theme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('order-helper-theme', appState.theme);
+            render();
+        };
+
+        window.toggleDropdown = (key) => {
+            appState.openDropdown = appState.openDropdown === key ? '' : key;
+            render();
+        };
+
+        window.selectOrderOption = (id, field, value) => {
+            appState.openDropdown = '';
+            updateOrder(id, field, value);
+        };
+
+        window.autoResizeNote = (el) => {
+            el.style.height = '40px';
+            el.style.height = `${Math.max(40, el.scrollHeight)}px`;
         };
 
         window.updateOrder = (id, field, value) => {
@@ -760,6 +1192,9 @@
                                 p.item_no = info['货品编号'] || info['货品代码'] || info['商品编号'] || '';
                                 p.barcode = info['条码'] || info['货品条码'] || info['商品条码'] || '';
                                 p.spec = info['规格'] || info['货品规格'] || info['型号规格'] || '';
+                                p.needsReview = false;
+                                p.matchStatus = 'matched';
+                                p.matchType = 'manual';
                             }
                         }
                         if (value && value !== oldMatch && searchName) {
@@ -779,6 +1214,33 @@
                     return newOrder;
                 }
                 return o;
+            });
+            render();
+        };
+
+        window.applyProductInfo = (orderId, productIndex, productDataIndex) => {
+            const info = appState.globalOptions.allProductsData?.[productDataIndex];
+            if (!info) return;
+
+            appState.orders = appState.orders.map(o => {
+                if (o.id !== orderId) return o;
+                const products = [...o.products];
+                const oldProduct = products[productIndex] || {};
+                const productInfo = info.productInfo || info;
+                products[productIndex] = {
+                    ...oldProduct,
+                    matchedName: info['货品名称'] || info.name || '',
+                    productInfo,
+                    spec_no: info['规格编号'] || info['货品代码'] || info['编码'] || '',
+                    item_no: info['货品编号'] || info['货品代码'] || info['商品编号'] || info.item_no || '',
+                    barcode: info['条码'] || info['货品条码'] || info['商品条码'] || '',
+                    spec: info['规格'] || info['货品规格'] || info['型号规格'] || '',
+                    needsReview: false,
+                    matchStatus: 'matched',
+                    matchType: 'manual'
+                };
+                const prodSum = products.reduce((sum, item) => sum + (parseFloat(item.price || 0) * parseInt(item.qty || 1)), 0);
+                return { ...o, products, total: prodSum + parseFloat(o.freight || 0) };
             });
             render();
         };
@@ -868,10 +1330,11 @@
                     return;
                 }
                 resultsDiv.innerHTML = list.map(item => `
-                    <div class="search-item p-3 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors flex justify-between items-center group" data-name="${item.name}">
+                    <div class="search-item p-3 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors flex justify-between items-center group" data-index="${item.dataIndex}" data-name="${item.name}">
                         <div class="flex flex-col">
                             <span class="text-[13px] font-bold text-gray-800 group-hover:text-blue-700">${item.name}</span>
-                            <span class="text-[11px] text-blue-500 font-mono">编号: ${item.item_no}</span>
+                            <span class="text-[11px] text-blue-500 font-mono">规格编号: ${item['规格编号'] || '--'}　货品编号: ${item['货品编号'] || '--'}　条码: ${item['条码'] || '--'}</span>
+                            <span class="text-[11px] text-gray-400">规格: ${item['规格'] || '--'}</span>
                         </div>
                         <span class="text-blue-400 opacity-0 group-hover:opacity-100">${icons.checkCircle}</span>
                     </div>
@@ -879,7 +1342,7 @@
 
                 resultsDiv.querySelectorAll('.search-item').forEach(item => {
                     item.onclick = () => {
-                        updateProduct(orderId, productIndex, 'matchedName', item.dataset.name);
+                        applyProductInfo(orderId, productIndex, parseInt(item.dataset.index));
                         modal.remove();
                         toast.success(`已关联货品: ${item.dataset.name}`);
                     };
@@ -892,8 +1355,8 @@
                     renderResults([]);
                     return;
                 }
-                const matched = allProdsData.filter(p => {
-                    const searchStr = `${p.name} ${p.item_no} ${Object.values(p.productInfo || {}).join(' ')}`.toUpperCase();
+                const matched = allProdsData.map((p, dataIndex) => ({ ...p, dataIndex })).filter(p => {
+                    const searchStr = `${p.name} ${p.item_no} ${p['规格编号'] || ''} ${p['货品编号'] || ''} ${p['条码'] || ''} ${p['规格'] || ''}`.toUpperCase();
                     return searchStr.includes(kw);
                 }).slice(0, 100);
                 renderResults(matched);
@@ -925,7 +1388,7 @@
 
             // 1. 立即清空输入框，准备下一单
             appState.inputText = '';
-            render();
+
 
             let chunks = rawText.split(/\n\s*\n/).map(t => t.trim()).filter(t => t.length > 5);
             if (chunks.length === 0) chunks = [rawText];
@@ -1021,9 +1484,9 @@
                     prodRows.push([
                         importId,
                         p.matchedName || p.searchName,
-                        p.productInfo?.['条码'] || '',
-                        p.productInfo?.['货品编号'] || '',
-                        p.productInfo?.['规格'] || '',
+                        p.productInfo?.['条码'] || p.productInfo?.['货品条码'] || p.barcode || '',
+                        p.productInfo?.['货品编号'] || p.item_no || '',
+                        p.productInfo?.['规格'] || p.spec || '',
                         p.qty, p.price
                     ]);
                 });
@@ -1052,8 +1515,10 @@
 
         // 渲染应用
         function render() {
+            document.documentElement.setAttribute('data-theme', appState.theme || 'dark');
             const root = document.getElementById('root');
             root.innerHTML = '';
+            root.className = 'cc-shell';
 
             // 查重逻辑
             const phoneCounts = {};
@@ -1064,26 +1529,25 @@
 
             // Header
             const header = document.createElement('header');
-            header.className = 'border-b border-gray-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50';
+            header.className = 'cc-header sticky top-0 z-50';
             header.innerHTML = `
                 <div class="px-4 h-14 flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white">
-                            ${icons.sparkles}
-                        </div>
+                        <div class="cc-logo">⌁</div>
                         <div>
-                            <h1 class="text-sm font-semibold text-gray-900">订单助手 AI版</h1>
-                            ${appState.orders.length > 0 ? `<p class="text-xs text-gray-500">${appState.orders.length} 个订单</p>` : ''}
+                            <h1 class="cc-title text-sm font-semibold">订单助手</h1>
+                            <p class="cc-subtitle text-xs">${appState.orders.length > 0 ? `${appState.orders.length} 个订单` : 'rules-engine / exact-match'}</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleTheme()" class="cc-chip text-sm" title="切换日夜模式">
+                            ${appState.theme === 'dark' ? '夜间模式' : '白天模式'}
+                        </button>
                         ${appState.orders.length > 0 ? `
-                            <button onclick="clearAllOrders()" class="h-8 px-4 text-sm rounded-full text-red-700 bg-red-50 hover:bg-red-800 hover:text-white border border-red-200 flex items-center gap-1.5 transition-all active:scale-95">
-                                ${icons.trash}
+                            <button onclick="clearAllOrders()" class="cc-chip cc-chip-danger text-sm">
                                 清空列表
                             </button>
-                            <button onclick="exportToExcel()" class="h-8 px-4 text-sm rounded-full text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 flex items-center gap-1.5 shadow-sm shadow-emerald-100 transition-all active:scale-95">
-                                ${icons.download}
+                            <button onclick="exportToExcel()" class="cc-chip cc-chip-primary text-sm">
                                 下载表格
                             </button>
                         ` : ''}
@@ -1115,15 +1579,15 @@
 
             // Input
             const inputSection = document.createElement('div');
-            inputSection.className = 'border-t border-gray-200 bg-white sticky bottom-0';
+            inputSection.className = 'cc-input-area sticky bottom-0';
             inputSection.innerHTML = `
                 <div class="max-w-7xl mx-auto px-4 py-4">
-                    <div class="flex items-center gap-3">
+                    <div class="cc-composer flex items-center gap-3 p-2">
                         <div class="flex-1 relative">
                             <textarea
                                 id="input-textarea"
                                 placeholder="粘贴订单文本，自动识别..."
-                                class="w-full min-h-[52px] max-h-[200px] resize-none rounded-2xl border border-gray-300 px-4 py-[15px] text-[15px] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                class="w-full min-h-[44px] max-h-[200px] resize-none border-0 px-3 py-[11px] text-[14px] focus:outline-none"
                                 ${appState.isProcessing ? 'disabled' : ''}
                                 rows="1"
                             >${appState.inputText}</textarea>
@@ -1131,9 +1595,9 @@
                         <button
                             id="submit-btn"
                             ${!appState.inputText.trim() || appState.isProcessing ? 'disabled' : ''}
-                            class="h-[52px] w-[52px] rounded-full flex items-center justify-center text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="cc-send h-[42px] px-4 min-w-[62px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            ${appState.isProcessing ? '<div class="loader" style="width: 20px; height: 20px; border-width: 2px;"></div>' : icons.send}
+                            ${appState.isProcessing ? '<div class="loader" style="width: 20px; height: 20px; border-width: 2px;"></div>' : '发送'}
                         </button>
                     </div>
                     <p class="text-xs text-gray-400 mt-2 text-center">
@@ -1179,9 +1643,17 @@
                     handleSubmitText(appState.inputText);
                 }
             });
+
+            document.querySelectorAll('.note-textarea').forEach(autoResizeNote);
         }
 
         // 初始化
+        document.addEventListener('click', () => {
+            if (appState.openDropdown) {
+                appState.openDropdown = '';
+                render();
+            }
+        });
         fetchOptions();
         render();
     </script>

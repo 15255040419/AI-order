@@ -135,7 +135,16 @@ class DataLoader:
                 for _, row in ex_df.iterrows():
                     prov = str(row.iloc[0]).strip()
                     if prov and prov != 'nan':
-                        self.express_rules[prov] = row.to_dict()
+                        row_data = row.to_dict()
+                        self.express_rules[prov] = {
+                            **row_data,
+                            "打印机_小": row_data.get("打印机"),
+                            "打印机_中": row_data.get("Unnamed: 2"),
+                            "打印机_大": row_data.get("Unnamed: 3"),
+                            "收银机": row_data.get("收银机"),
+                            "一体称": row_data.get("一体称"),
+                            "其他可发快递": row_data.get("其他可发快递"),
+                        }
                 logger.info(f"✅ 已装载 {len(self.express_rules)} 省份快递规则")
         except Exception as e: logger.error(f"❌ 快递规则加载失败: {e}")
 

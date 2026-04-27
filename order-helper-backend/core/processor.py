@@ -44,7 +44,7 @@ def ProcessOrderResult(ai_res, raw_text, processed_products, config_data):
         qty = p.get('qty', 1)
         prod_summaries.append(f"{s_name}*{qty}")
     
-    prod_summary_text = " ".join(prod_summaries)
+    prod_summary_text = "+".join(prod_summaries)
     
     # 提取“备注：”之后的内容 (原样保留)
     remark_match = re.search(r'备注[：:](.*)', raw_text)

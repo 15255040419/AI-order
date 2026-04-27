@@ -50,8 +50,10 @@ def select_express(products, province, address_text, raw_text, express_table, co
     reg_cfg = cat_rules.get("收银机", {"前缀": ["K"], "关键词": ["收银机"]})
 
     for p in products:
+        if p.get("needsReview") or not p.get("matchedName"):
+            continue
         info = p.get("productInfo", {}) or {}
-        name = str(p.get("matchedName", "") or p.get("searchName", "")).upper()
+        name = str(p.get("matchedName", "")).upper()
         qty = int(p.get("qty", 1))
         # 🌟 修复：跳过无效或空的重量数值
         try:

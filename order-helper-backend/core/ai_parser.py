@@ -31,7 +31,7 @@ class OrderAIParser:
 {pre_parsed_info}
 
 【参考候选】:
-- 货品: {product_ref}
+- 货品候选仅供判断哪些文字可能是货品，不要改写成候选名称: {product_ref}
 - 客户/业务: {customer_ref} / {salesman_ref}
 
 【业务规则】:
@@ -41,15 +41,15 @@ class OrderAIParser:
 【输出格式】:
 {{
   "receiver": "姓名", "phone": "电话", "address": "详细地址", "province": "省份",
-  "products": [ {{ "name": "标准货品名", "qty": 数量, "price": 单价 }} ],
+  "products": [ {{ "raw_name": "订单原文里的货品文字", "qty": 数量, "price": 单价 }} ],
   "payment_status": "已付/未付", "payment_account": "收款账户",
   "customer_account": "客户账号", "salesman_code": "业务员代码",
   "postage": 0, "total_amount": 0, "extra_note": "备注"
 }}
 
 【规则】:
-1. 货品名需完整保留规格型号（如 JY-335C）。
-2. 优先对齐【参考候选】中的标准名称。
+1. products.raw_name 必须从订单原文中原样截取，不要补字、不要改字、不要标准化。
+2. 不要把货品改写成参考候选中的标准名称，最终货品由本地库存表精确匹配。
 3. 如果已知信息已有字段，请保持一致。
 4. 直接返回 JSON 字符串。"""
 
