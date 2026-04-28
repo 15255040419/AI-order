@@ -29,20 +29,44 @@ def ProcessOrderResult(ai_res, raw_text, processed_products, config_data):
     else:
         customer_account = ai_res.get("customer_account", "")
 
-    # 3. 金额与手机 (正则先行)
+    # 3. 金额与手机 (正则先行与多重兜底)
     phones = re.findall(r'1[3-9]\d{9}', raw_text)
     phone = phones[0] if phones else ai_res.get("phone", "")
+    
+    # 增强总价识别（不再强依赖“元”字）
+    total_amount = 0.0
     money_match = re.search(r'(\d+(?:\.\d+)?)\s*元', raw_text)
-    total_amount = float(money_match.group(1)) if money_match else sum(float(p.get('price', 0)) * int(p.get('qty', 1)) for p in processed_products)
+    eq_matches = re.findall(r'=\s*(\d+(?:\.\d+)?)', raw_text)
+    prefix_match = re.search(r'(?:合计|总计|共计|金额|应收|总额|实付|应付|收款)[:：\s]*(\d+(?:\.\d+)?)', raw_text)
+    end_num_match = re.search(r'\s+(\d+(?:\.\d+)?)\s*$', raw_text)
+
+    if money_match:
+        total_amount = float(money_match.group(1))
+    elif eq_matches:
+        total_amount = float(eq_matches[-1]) # 拿最后一个等号的结果
+    elif prefix_match:
+        total_amount = float(prefix_match.group(1))
+    else:
+        ai_total = float(ai_res.get("total_amount", 0) or 0)
+        if ai_total > 0:
+            total_amount = ai_total
+        elif end_num_match and 0 < float(end_num_match.group(1)) < 100000:
+            # 如果结尾是孤立数字（且不是手机号等超大数字），当作金额
+            total_amount = float(end_num_match.group(1))
+        else:
+            # 终极兜底：所有货品（单价 * 数量）之和
+            total_amount = sum(float(p.get('price', 0)) * int(p.get('qty', 1)) for p in processed_products)
 
     # 4. 【核心改进】备注合成逻辑 (对齐老项目：原文截取 + 备注字样)
     # 老项目逻辑：直接使用 processed_products 里的 searchName (这是从原文中直接拎出来的带属性的名字)
     prod_summaries = []
     for p in processed_products:
         # searchName 存的是 AI 提取出并在原文中定位到的原始文本 (如 "JY-335C黑色")
-        s_name = p.get('searchName', '')
+        s_name = str(p.get('searchName', '')).strip()
         qty = p.get('qty', 1)
-        prod_summaries.append(f"{s_name}*{qty}")
+        # 如果原文名结尾已经带了数量（例如 "XP-246B*12" 或 "XP-246B 12个"），先把结尾的数量部分去掉，防止变成 *12*12
+        clean_name = re.sub(rf'[\*xX×\s]*{qty}\s*(?:台|个|卷|套|箱|包|张|件)?$', '', s_name).strip()
+        prod_summaries.append(f"{clean_name}*{qty}")
     
     prod_summary_text = "+".join(prod_summaries)
     

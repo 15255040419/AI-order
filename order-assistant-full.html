@@ -211,18 +211,6 @@
             background: color-mix(in srgb, #ef4444 12%, var(--cc-surface-2)) !important;
         }
 
-        .duplicate-highlight .cc-card-head::after {
-            content: "重复订单";
-            margin-left: auto;
-            padding: 2px 8px;
-            border-radius: 999px;
-            border: 1px solid color-mix(in srgb, #ef4444 55%, transparent);
-            color: #ef4444;
-            font-size: 11px;
-            font-weight: 800;
-            line-height: 1.4;
-        }
-
         /* 🌟 精简动画：仅保留核心反馈 */
         .btn-hover-red:hover {
             background-color: #991b1b !important;
@@ -1222,9 +1210,12 @@
                             <span class="text-[10px] font-black px-2 py-0.5 rounded-md" style="background: var(--cc-text); color: var(--cc-bg);">#${index + 1}</span>
                             <h3 class="font-bold text-lg tracking-tight">${order.receiver || '新订单'}</h3>
                         </div>
-                        <button onclick="confirmDeleteOrder(${order.id})" class="cc-chip cc-chip-danger h-8 w-8 !px-0 justify-center">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                        </button>
+                        <div class="flex items-center gap-3">
+                            ${isDuplicate ? `<span class="px-2 py-0.5 rounded-full border border-red-500/55 text-red-500 text-[11px] font-extrabold leading-[1.4]">重复订单</span>` : ''}
+                            <button onclick="confirmDeleteOrder(${order.id})" class="cc-chip cc-chip-danger h-8 w-8 !px-0 justify-center">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="space-y-2.5">
@@ -1257,7 +1248,7 @@
                         <!-- 第三排：业务属性 (重新分配比例) -->
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-2 py-2 border-y border-dashed border-gray-100">
                              <div class="md:col-span-2 space-y-0.5">
-                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">客户账号 (长字段)</label>
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">客户账号</label>
                                 <input type="text" value="${order.account || ''}" onchange="updateOrder(${order.id}, 'account', this.value)" class="w-full h-8 text-[13px] px-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold text-gray-800" />
                             </div>
                             <div class="space-y-0.5">
@@ -1265,7 +1256,7 @@
                                 ${customSelect(`order-${order.id}-salesman`, 'salesman', order.salesman || '', globalOptions.salesmen, '-- 请选择 --', order.id)}
                             </div>
                             <div class="space-y-0.5 relative">
-                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">快递公司</label>
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">物流公司</label>
                                 ${(() => {
                     const options = [...globalOptions.expressOptions];
                     if (order.express && !options.includes(order.express)) options.push(order.express);
@@ -1296,7 +1287,7 @@
 
                         <!-- 第五排：备注 (单独一行，自动换行) -->
                         <div class="space-y-0.5">
-                             <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">客户备注 / 细节说明</label>
+                             <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">客服备注</label>
                              <textarea onchange="updateOrder(${order.id}, 'note', this.value)" class="note-textarea w-full text-[13px] px-3 border border-gray-200 rounded-lg bg-blue-50/50 text-blue-800 font-bold focus:outline-none resize-none overflow-hidden" oninput="autoResizeNote(this)">${order.note || ''}</textarea>
                         </div>
 
@@ -1361,7 +1352,7 @@
                         <!-- 底部原文回显 -->
                         <div class="mt-1 pt-2 border-t border-dashed border-gray-200">
                             <div class="flex items-center gap-2 mb-1 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                                📝 待发送订单原始报数
+                                📝 订单原文
                             </div>
                             <div class="bg-gray-50/50 rounded-lg p-2 text-[10px] text-gray-500 font-medium leading-normal italic border border-gray-100 shadow-inner">
                                 ${(order.raw || '无数据').replace(/\r?\n/g, ' ')}
