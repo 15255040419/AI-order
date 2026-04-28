@@ -4,7 +4,9 @@ import json
 import logging
 import pandas as pd
 import time
-from flask import Flask, request, jsonify, send_file
+import threading
+import queue
+from flask import Flask, request, jsonify, send_file, Response, stream_with_context
 from flask_cors import CORS
 
 # 引入核心模块
@@ -436,40 +438,94 @@ def infer_price_plan(raw_text, products):
         result["prices"] = additive_prices
     return result
 
-@app.route('/api/parse', methods=['POST'])
-def parse_order():
+def _progress(progress, step, message, **extra):
+    if progress:
+        progress({
+            "step": step,
+            "message": message,
+            **extra
+        })
+
+def process_order_text(raw_text, progress=None):
     start_time = time.time()
-    data = request.json
-    raw_text = data.get('text', '').strip()
-    if not raw_text: return jsonify({"error": "请输入内容"}), 400
+    raw_text = (raw_text or '').strip()
+    if not raw_text:
+        raise ValueError("请输入内容")
 
     logger.info(">>> 启动混合解析引擎 (精准分工版) <<<")
+    _progress(progress, "start", "启动混合解析引擎")
+    debug_trace = {
+        "rawText": raw_text,
+        "steps": []
+    }
     
     # [本地引擎] 1. 支付与账户 (强制优先)
+    _progress(progress, "payment", "识别付款状态与收款账户")
     local_pay_method, local_receipt = local_payment_check(raw_text, data_loader.config)
+    debug_trace["steps"].append({
+        "name": "payment_local_rule",
+        "payMethod": local_pay_method,
+        "receipt": local_receipt,
+    })
     
     # [本地引擎] 2. 货品/手机/客户 预扫描
+    _progress(progress, "local_pre_parse", "本地预解析手机号、客户和货品")
     local_info = local_pre_parse(raw_text, data_loader)
+    debug_trace["steps"].append({
+        "name": "local_pre_parse",
+        "phone": local_info.get("phone"),
+        "receiver": local_info.get("receiver"),
+        "products": local_info.get("products", []),
+        "customerAccount": local_info.get("customer_account"),
+        "salesmanCode": local_info.get("salesman_code"),
+    })
     
     # [AI 引擎] 3. 仅处理复杂地址与不规范货品名
+    _progress(progress, "candidate_products", "准备货品候选与业务员规则")
     product_context = ""
     if not local_info["products"]:
         candidates = get_candidate_products(raw_text, data_loader)
         product_context = ", ".join(candidates)
     
     salesmen_keys = ", ".join(list(data_loader.config.get("业务员映射", {}).keys()))
+    has_local_context = any([
+        local_info.get("phone"),
+        local_info.get("receiver"),
+        local_info.get("products"),
+        local_info.get("customer_account"),
+        local_info.get("salesman_code"),
+    ])
+    _progress(progress, "ai_parse", "调用 AI 解析地址与订单字段", usedLocalContext=has_local_context)
+    ai_start = time.time()
     ai_res, err = ai_parser.parse_with_context(
         raw_text, 
         product_ref=product_context,
         customer_ref=local_info["receiver"] or "优先匹配老客户",
         salesman_ref=salesmen_keys,
-        pre_parsed=local_info if local_info["products"] else None
+        pre_parsed=local_info if has_local_context else None
     )
-    if not ai_res: return jsonify({"error": f"AI服务异常: {err}"}), 500
+    if not ai_res:
+        raise RuntimeError(f"AI服务异常: {err}")
+    debug_trace["steps"].append({
+        "name": "ai_parse",
+        "durationSeconds": round(time.time() - ai_start, 3),
+        "usedProductCandidates": bool(product_context),
+        "usedLocalContext": has_local_context,
+        "receiver": ai_res.get("receiver"),
+        "address": ai_res.get("address"),
+        "products": ai_res.get("products", []),
+    })
 
     # [补全引擎] 4. 货品详情严格对齐
+    _progress(progress, "price_plan", "拆分价格与补运费")
     ai_products = local_info["products"] or ai_res.get('products', [])
     price_plan = infer_price_plan(raw_text, ai_products)
+    debug_trace["steps"].append({
+        "name": "price_plan",
+        "prices": price_plan.get("prices", []),
+        "freight": price_plan.get("freight", 0),
+    })
+    _progress(progress, "product_match", "精确匹配库存表货品")
     processed_products = []
     for idx, p in enumerate(ai_products):
         search_name = p.get('raw_name') or p.get('name', '')
@@ -492,7 +548,23 @@ def parse_order():
             "candidates": match_result.get('candidates', [])
         })
 
+    debug_trace["steps"].append({
+        "name": "strict_product_match",
+        "products": [
+            {
+                "raw": p.get("searchName"),
+                "matched": p.get("matchedName"),
+                "qty": p.get("qty"),
+                "price": p.get("price"),
+                "status": p.get("matchStatus"),
+                "matchType": p.get("matchType"),
+            }
+            for p in processed_products
+        ],
+    })
+
     # [规则引擎] 5. 结果聚合与强制覆盖
+    _progress(progress, "customer_rules", "套用客户档案与固定业务规则")
     profile = find_customer_profile(raw_text, data_loader.customer_index)
     result = ProcessOrderResult(ai_res, raw_text, processed_products, data_loader.config)
     if price_plan.get("freight"):
@@ -514,6 +586,7 @@ def parse_order():
     result = apply_customer_rules(result, profile)
 
     # 快递逻辑判定：货品未精确确认时，不自动猜快递
+    _progress(progress, "express_rule", "判定快递规则")
     if any(p.get("needsReview") for p in result.get("products", [])):
         result['express'] = "待确认"
         result['expressReason'] = "存在未精确匹配货品，确认货品后再判定快递"
@@ -524,8 +597,71 @@ def parse_order():
         )
         result['express'], result['expressReason'] = express_name, express_reason
 
+    debug_trace["steps"].append({
+        "name": "express_rule",
+        "province": result.get("province"),
+        "express": result.get("express"),
+        "reason": result.get("expressReason"),
+    })
+    debug_trace["durationSeconds"] = round(time.time() - start_time, 3)
+    result["debugTrace"] = debug_trace
+
     logger.info(f"🚀 解析完成！本地判定占比: 70%, AI 占比: 30%, 耗时: {time.time() - start_time:.2f}s")
-    return jsonify(sanitize_data(result))
+    _progress(progress, "complete", "识别完成", durationSeconds=debug_trace["durationSeconds"])
+    return sanitize_data(result)
+
+@app.route('/api/parse', methods=['POST'])
+def parse_order():
+    data = request.json or {}
+    raw_text = data.get('text', '').strip()
+    if not raw_text:
+        return jsonify({"error": "请输入内容"}), 400
+    try:
+        return jsonify(process_order_text(raw_text))
+    except Exception as e:
+        logger.exception("订单解析失败")
+        return jsonify({"error": str(e)}), 500
+
+def _sse(event, payload):
+    return f"event: {event}\ndata: {json.dumps(sanitize_data(payload), ensure_ascii=False)}\n\n"
+
+@app.route('/api/parse-stream', methods=['POST'])
+def parse_order_stream():
+    data = request.json or {}
+    raw_text = data.get('text', '').strip()
+    if not raw_text:
+        return jsonify({"error": "请输入内容"}), 400
+
+    @stream_with_context
+    def generate():
+        events = queue.Queue()
+
+        def push_progress(payload):
+            events.put(("progress", payload))
+
+        def worker():
+            try:
+                result = process_order_text(raw_text, push_progress)
+                events.put(("done", result))
+            except Exception as e:
+                logger.exception("流式订单解析失败")
+                events.put(("error", {"message": str(e)}))
+            finally:
+                events.put(("close", {}))
+
+        threading.Thread(target=worker, daemon=True).start()
+        yield _sse("progress", {"step": "queued", "message": "订单已进入解析队列"})
+
+        while True:
+            event, payload = events.get()
+            if event == "close":
+                break
+            yield _sse(event, payload)
+
+    return Response(generate(), mimetype="text/event-stream", headers={
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no"
+    })
 
 @app.route('/api/learn', methods=['POST'])
 def learn_correction():

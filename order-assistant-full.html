@@ -63,8 +63,8 @@
         .loader {
             width: 32px;
             height: 32px;
-            border: 3px solid #e5e7eb;
-            border-top-color: #3b82f6;
+            border: 2px solid color-mix(in srgb, var(--cc-border) 70%, transparent);
+            border-top-color: var(--cc-accent);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -202,6 +202,27 @@
             }
         }
 
+        .duplicate-highlight {
+            border-color: #ef4444 !important;
+            animation: breathing-red 1.6s ease-in-out infinite;
+        }
+
+        .duplicate-highlight .cc-card-head {
+            background: color-mix(in srgb, #ef4444 12%, var(--cc-surface-2)) !important;
+        }
+
+        .duplicate-highlight .cc-card-head::after {
+            content: "重复订单";
+            margin-left: auto;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid color-mix(in srgb, #ef4444 55%, transparent);
+            color: #ef4444;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1.4;
+        }
+
         /* 🌟 精简动画：仅保留核心反馈 */
         .btn-hover-red:hover {
             background-color: #991b1b !important;
@@ -253,33 +274,57 @@
         body {
             background: var(--cc-bg) !important;
             color: var(--cc-text);
+            --mouse-x: 50vw;
+            --mouse-y: 50vh;
         }
 
         .cc-shell {
+            position: relative;
             min-height: 100vh;
             background:
-                linear-gradient(180deg, rgba(217, 119, 6, 0.06), transparent 260px),
+                linear-gradient(180deg, color-mix(in srgb, var(--cc-accent) 8%, transparent), transparent 260px),
                 var(--cc-bg);
+        }
+
+        .cc-shell::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(300px circle at var(--mouse-x) var(--mouse-y),
+                    color-mix(in srgb, var(--cc-accent) 9%, transparent),
+                    transparent 58%);
+            opacity: 0.42;
+            transition: opacity 0.2s ease;
+        }
+
+        .cc-shell > * {
+            position: relative;
+            z-index: 1;
         }
 
         .cc-header {
             border-bottom: 1px solid var(--cc-border);
-            background: color-mix(in srgb, var(--cc-surface) 92%, transparent);
+            background: color-mix(in srgb, var(--cc-surface) 88%, transparent);
             backdrop-filter: blur(18px);
         }
 
         .cc-logo {
             width: 32px;
             height: 32px;
-            border-radius: 8px;
-            background: var(--cc-text);
-            color: var(--cc-bg);
+            border-radius: 9px;
+            border: 1px solid var(--cc-border);
+            background: color-mix(in srgb, var(--cc-surface-2) 86%, transparent);
+            color: var(--cc-accent);
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: var(--cc-mono);
-            font-size: 16px;
-            font-weight: 800;
+            font-size: 15px;
+            font-weight: 750;
+            box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
         }
 
         .cc-title {
@@ -293,22 +338,24 @@
         }
 
         .cc-chip {
-            height: 30px;
-            padding: 0 12px;
+            height: 32px;
+            padding: 0 11px;
             border: 1px solid var(--cc-border);
-            border-radius: 7px;
-            background: var(--cc-surface-2);
+            border-radius: 9px;
+            background: color-mix(in srgb, var(--cc-surface) 86%, var(--cc-bg));
             color: var(--cc-text);
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            font-weight: 650;
+            font-weight: 680;
             font-family: inherit;
-            transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+            box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, color 0.15s ease;
         }
 
         .cc-chip:hover {
             background: var(--cc-surface-3);
+            border-color: color-mix(in srgb, var(--cc-accent) 45%, var(--cc-border));
             transform: translateY(-1px);
         }
 
@@ -317,18 +364,45 @@
         }
 
         .cc-chip-primary {
-            background: var(--cc-text);
-            color: var(--cc-bg);
-            border-color: var(--cc-text);
+            background: color-mix(in srgb, var(--cc-accent) 16%, var(--cc-surface));
+            color: var(--cc-text);
+            border-color: color-mix(in srgb, var(--cc-accent) 42%, var(--cc-border));
         }
 
         .cc-card {
+            position: relative;
             background: var(--cc-surface) !important;
             border: 1px solid var(--cc-border) !important;
             border-radius: 10px !important;
             box-shadow: var(--cc-shadow);
             color: var(--cc-text);
             overflow: hidden;
+        }
+
+        .cc-card::before {
+            display: none;
+        }
+
+        .cc-card:hover {
+            border-color: color-mix(in srgb, var(--cc-accent) 28%, var(--cc-border)) !important;
+        }
+
+        .cc-card-enter {
+            animation: card-type-in 0.42s ease both;
+        }
+
+        @keyframes card-type-in {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+                clip-path: inset(0 0 100% 0);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+                clip-path: inset(0 0 0 0);
+            }
         }
 
         .cc-card-head {
@@ -350,17 +424,73 @@
         }
 
         .cc-send {
-            background: var(--cc-accent);
-            color: #171814;
-            border-radius: 8px;
+            background: color-mix(in srgb, var(--cc-accent) 18%, var(--cc-surface));
+            color: var(--cc-text);
+            border: 1px solid color-mix(in srgb, var(--cc-accent) 40%, var(--cc-border));
+            border-radius: 9px;
             font-size: 14px;
-            font-weight: 800;
-            transition: transform 0.15s ease, filter 0.15s ease;
+            font-weight: 780;
+            box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
+            transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
         }
 
         .cc-send:hover {
-            filter: brightness(1.05);
+            background: color-mix(in srgb, var(--cc-accent) 28%, var(--cc-surface));
+            border-color: color-mix(in srgb, var(--cc-accent) 58%, var(--cc-border));
             transform: translateY(-1px);
+        }
+
+        .cc-loading-card {
+            min-height: 162px;
+            padding: 18px;
+        }
+
+        .cc-type-line {
+            position: relative;
+            display: block;
+            width: fit-content;
+            max-width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            font-family: var(--cc-mono);
+            color: var(--cc-muted);
+            border-right: 2px solid var(--cc-accent);
+            animation: type-line 1.8s steps(28, end) infinite, caret-blink 0.8s steps(2, start) infinite;
+        }
+
+        .cc-scan-row {
+            height: 9px;
+            border-radius: 999px;
+            background: linear-gradient(90deg,
+                    var(--cc-surface-2),
+                    color-mix(in srgb, var(--cc-accent) 28%, var(--cc-surface-2)),
+                    var(--cc-surface-2));
+            background-size: 220% 100%;
+            animation: scan-row 1.25s ease-in-out infinite;
+        }
+
+        .cc-scan-row:nth-child(2) {
+            width: 72%;
+            animation-delay: 0.12s;
+        }
+
+        .cc-scan-row:nth-child(3) {
+            width: 88%;
+            animation-delay: 0.24s;
+        }
+
+        @keyframes type-line {
+            0% { max-width: 0; }
+            52%, 100% { max-width: 28ch; }
+        }
+
+        @keyframes caret-blink {
+            to { border-color: transparent; }
+        }
+
+        @keyframes scan-row {
+            from { background-position: 100% 0; }
+            to { background-position: -120% 0; }
         }
 
         .cc-welcome {
@@ -894,16 +1024,27 @@
         }
 
         // 订单卡片
-        function OrderCard(order, index, globalOptions, onUpdate, onDelete, isDuplicate = false) {
+        function OrderCard(order, index, globalOptions, onUpdate, onDelete, isDuplicate = false, animate = true) {
             const card = document.createElement('div');
-            card.className = `cc-card p-3 mb-3 transition-all ${isDuplicate ? 'duplicate-highlight' : ''}`;
+            card.className = `cc-card ${animate ? 'cc-card-enter' : ''} p-3 mb-3 transition-all ${isDuplicate ? 'duplicate-highlight' : ''}`;
             card.style.height = 'fit-content';
+            card.dataset.orderId = String(order.id);
 
             if (order.loading) {
                 card.innerHTML = `
-                    <div class="p-8 flex flex-col items-center justify-center">
-                        <div class="loader mb-3"></div>
-                        <span class="text-sm text-gray-600">AI 正在识别...</span>
+                    <div class="cc-loading-card">
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="loader"></div>
+                            <div>
+                                <div class="cc-type-line text-sm">${escAttr(order.progressText || '订单已进入解析队列')}</div>
+                                <div class="text-xs cc-muted mt-1">${escAttr(order.progressStep || 'streaming / rules-engine')}</div>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="cc-scan-row w-full"></div>
+                            <div class="cc-scan-row"></div>
+                            <div class="cc-scan-row"></div>
+                        </div>
                     </div>
                 `;
                 return card;
@@ -1113,12 +1254,13 @@
         window.toggleTheme = () => {
             appState.theme = appState.theme === 'dark' ? 'light' : 'dark';
             localStorage.setItem('order-helper-theme', appState.theme);
-            render();
+            renderKeepScroll();
         };
 
         window.toggleDropdown = (key) => {
-            appState.openDropdown = appState.openDropdown === key ? '' : key;
-            render();
+            const previousKey = appState.openDropdown;
+            appState.openDropdown = previousKey === key ? '' : key;
+            refreshDropdownCards(previousKey, appState.openDropdown);
         };
 
         window.selectOrderOption = (id, field, value) => {
@@ -1132,6 +1274,8 @@
         };
 
         window.updateOrder = (id, field, value) => {
+            const oldOrder = appState.orders.find(o => o.id === id);
+            const oldPhone = String(oldOrder?.phone || '').trim();
             appState.orders = appState.orders.map(o => {
                 if (o.id === id) {
                     let newOrder = { ...o, [field]: value };
@@ -1168,7 +1312,7 @@
                 }
                 return o;
             });
-            render();
+            refreshOrderAfterFieldChange(id, field, oldPhone);
         };
 
         window.updateProduct = (orderId, productIndex, field, value) => {
@@ -1215,7 +1359,7 @@
                 }
                 return o;
             });
-            render();
+            scheduleOrderCardRefresh(orderId);
         };
 
         window.applyProductInfo = (orderId, productIndex, productDataIndex) => {
@@ -1242,7 +1386,7 @@
                 const prodSum = products.reduce((sum, item) => sum + (parseFloat(item.price || 0) * parseInt(item.qty || 1)), 0);
                 return { ...o, products, total: prodSum + parseFloat(o.freight || 0) };
             });
-            render();
+            scheduleOrderCardRefresh(orderId);
         };
 
         async function learnCorrection(type, rawName, matchedName, customer) {
@@ -1263,7 +1407,7 @@
                 '删除后无法恢复，请确认是否继续。',
                 () => {
                     appState.orders = appState.orders.filter(o => o.id !== id);
-                    render();
+                    renderKeepScroll();
                     toast.success('订单已删除');
                 }
             );
@@ -1381,6 +1525,108 @@
             }
         }
 
+        function updatePlaceholderOrder(orderId, patch) {
+            appState.orders = appState.orders.map(o =>
+                o.id === orderId ? { ...o, ...patch } : o
+            );
+            scheduleOrderCardRefresh(orderId);
+        }
+
+        function applyParsedOrder(orderId, parsed) {
+            appState.orders = appState.orders.map(o => {
+                if (o.id === orderId) {
+                    return {
+                        ...o,
+                        ...parsed,
+                        loading: false,
+                        error: false,
+                        progressText: '',
+                        progressStep: '',
+                        receiver: parsed.receiver || '未知名字'
+                    };
+                }
+                return o;
+            });
+        }
+
+        async function parseOrderPlain(placeholder) {
+            const resp = await fetch(`${BACKEND_BASE_URL}/parse`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: placeholder.raw }),
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const parsed = await resp.json();
+            applyParsedOrder(placeholder.id, parsed);
+        }
+
+        function handleStreamEvent(placeholder, eventName, payload) {
+            if (eventName === 'progress') {
+                updatePlaceholderOrder(placeholder.id, {
+                    progressText: payload.message || '正在识别...',
+                    progressStep: payload.step || ''
+                });
+                return false;
+            }
+
+            if (eventName === 'done') {
+                applyParsedOrder(placeholder.id, payload);
+                return true;
+            }
+
+            if (eventName === 'error') {
+                throw new Error(payload.message || '流式解析失败');
+            }
+            return false;
+        }
+
+        async function parseOrderWithStream(placeholder) {
+            let streamStarted = false;
+            try {
+                const resp = await fetch(`${BACKEND_BASE_URL}/parse-stream`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: placeholder.raw }),
+                });
+                if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
+
+                streamStarted = true;
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+                let doneReceived = false;
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+
+                    const chunks = buffer.split('\n\n');
+                    buffer = chunks.pop() || '';
+                    for (const chunk of chunks) {
+                        const eventLine = chunk.split('\n').find(line => line.startsWith('event:'));
+                        const dataLine = chunk.split('\n').find(line => line.startsWith('data:'));
+                        if (!dataLine) continue;
+                        const eventName = eventLine ? eventLine.replace(/^event:\s*/, '').trim() : 'message';
+                        const payload = JSON.parse(dataLine.replace(/^data:\s*/, ''));
+                        if (handleStreamEvent(placeholder, eventName, payload)) {
+                            doneReceived = true;
+                        }
+                    }
+                }
+
+                if (!doneReceived) throw new Error('流式解析未返回完成结果');
+            } catch (e) {
+                if (streamStarted) throw e;
+                console.warn('流式解析不可用，自动回退普通解析:', e);
+                updatePlaceholderOrder(placeholder.id, {
+                    progressText: '流式连接失败，切换普通解析...',
+                    progressStep: 'fallback'
+                });
+                await parseOrderPlain(placeholder);
+            }
+        }
+
         // 提交订单文本 (非阻塞异步模式)
         async function handleSubmitText(text) {
             const rawText = text.trim();
@@ -1388,6 +1634,7 @@
 
             // 1. 立即清空输入框，准备下一单
             appState.inputText = '';
+            syncComposerFromState();
 
 
             let chunks = rawText.split(/\n\s*\n/).map(t => t.trim()).filter(t => t.length > 5);
@@ -1412,48 +1659,26 @@
                     receipt: appState.globalOptions.receipts[0] || '',
                     express: '',
                     note: '',
+                    progressText: '订单已进入解析队列',
+                    progressStep: 'queued',
                 };
             });
 
             // 2. 把占位符按序追加到列表末尾
+            const startIndex = appState.orders.length;
             appState.orders = [...appState.orders, ...newOrders];
-            render();
+            appendNewOrderCards(startIndex, newOrders);
 
             // 3. 并发解析每一单
             newOrders.forEach(async (placeholder, idx) => {
                 try {
-                    const resp = await fetch(`${BACKEND_BASE_URL}/parse`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: placeholder.raw }),
-                    });
-
-                    if (resp.ok) {
-                        const parsed = await resp.json();
-                        console.log('🌟 [100% 原始数据到达]:', parsed);
-
-                        // 🌟 强力更新：不仅合并，还要确保关键字段不被默认值覆盖
-                        appState.orders = appState.orders.map(o => {
-                            if (o.id === placeholder.id) {
-                                return {
-                                    ...o,
-                                    ...parsed,
-                                    loading: false,
-                                    error: false,
-                                    receiver: parsed.receiver || '未知名字'
-                                };
-                            }
-                            return o;
-                        });
-                    } else {
-                        throw new Error(`HTTP ${resp.status}`);
-                    }
+                    await parseOrderWithStream(placeholder);
                 } catch (e) {
                     appState.orders = appState.orders.map(o =>
                         o.id === placeholder.id ? { ...o, error: true, loading: false, errType: e.message, status: 'error', message: '前端处理异常: ' + e.message } : o
                     );
                 } finally {
-                    render();
+                    scheduleRelatedOrderCardRefresh(placeholder.id);
                 }
             });
         }
@@ -1507,10 +1732,172 @@
                 '此操作将删除所有已识别的订单，且无法撤销。请确保已下载重要数据。',
                 () => {
                     appState.orders = [];
-                    render();
+                    renderKeepScroll();
                     toast.success('已清空所有订单');
                 }
             );
+        }
+
+        function getOrdersScrollSnapshot() {
+            const scroller = document.getElementById('orders-scroll');
+            if (!scroller) return null;
+            return {
+                top: scroller.scrollTop,
+                left: scroller.scrollLeft
+            };
+        }
+
+        function restoreOrdersScrollSnapshot(snapshot) {
+            if (!snapshot) return;
+            requestAnimationFrame(() => {
+                const scroller = document.getElementById('orders-scroll');
+                if (!scroller) return;
+                scroller.scrollTop = snapshot.top;
+                scroller.scrollLeft = snapshot.left;
+            });
+        }
+
+        function renderKeepScroll() {
+            const snapshot = getOrdersScrollSnapshot();
+            render();
+            restoreOrdersScrollSnapshot(snapshot);
+        }
+
+        function scrollOrdersToBottom() {
+            requestAnimationFrame(() => {
+                const scroller = document.getElementById('orders-scroll');
+                if (!scroller) return;
+                scroller.scrollTop = scroller.scrollHeight;
+            });
+        }
+
+        function renderScrollBottom() {
+            render();
+            scrollOrdersToBottom();
+        }
+
+        function updateHeaderSummary() {
+            const label = document.getElementById('order-count-label');
+            if (!label) return;
+            label.textContent = appState.orders.length > 0 ? `${appState.orders.length} 个订单` : 'rules-engine / exact-match';
+        }
+
+        function syncComposerFromState() {
+            const textarea = document.getElementById('input-textarea');
+            const submitBtn = document.getElementById('submit-btn');
+            if (textarea) {
+                textarea.value = appState.inputText;
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(textarea.scrollHeight || 44, 200) + 'px';
+            }
+            if (submitBtn) {
+                submitBtn.disabled = !appState.inputText.trim() || appState.isProcessing;
+            }
+        }
+
+        function getPhoneCounts() {
+            const phoneCounts = {};
+            appState.orders.forEach(o => {
+                const p = String(o.phone || '').trim();
+                if (p) phoneCounts[p] = (phoneCounts[p] || 0) + 1;
+            });
+            return phoneCounts;
+        }
+
+        function replaceOrderCard(orderId) {
+            const grid = document.getElementById('orders-grid');
+            if (!grid) {
+                renderKeepScroll();
+                return;
+            }
+
+            const index = appState.orders.findIndex(o => String(o.id) === String(orderId));
+            if (index < 0) return;
+
+            const order = appState.orders[index];
+            const phoneCounts = getPhoneCounts();
+            const isDuplicate = order.phone && phoneCounts[String(order.phone).trim()] > 1;
+            const nextCard = OrderCard(order, index, appState.globalOptions, updateOrder, confirmDeleteOrder, isDuplicate, false);
+            const oldCard = grid.querySelector(`[data-order-id="${String(orderId)}"]`);
+
+            if (oldCard) {
+                oldCard.replaceWith(nextCard);
+            } else {
+                grid.appendChild(nextCard);
+            }
+
+            nextCard.querySelectorAll('.note-textarea').forEach(autoResizeNote);
+        }
+
+        let pendingOrderCardIds = new Set();
+        let pendingCardFrame = null;
+        function scheduleOrderCardRefresh(orderId) {
+            pendingOrderCardIds.add(orderId);
+            if (pendingCardFrame) return;
+            pendingCardFrame = requestAnimationFrame(() => {
+                const ids = Array.from(pendingOrderCardIds);
+                pendingOrderCardIds.clear();
+                pendingCardFrame = null;
+                ids.forEach(replaceOrderCard);
+            });
+        }
+
+        function scheduleRelatedOrderCardRefresh(orderId) {
+            const order = appState.orders.find(o => String(o.id) === String(orderId));
+            const phone = String(order?.phone || '').trim();
+            if (!phone) {
+                scheduleOrderCardRefresh(orderId);
+                return;
+            }
+            appState.orders
+                .filter(o => String(o.phone || '').trim() === phone)
+                .forEach(o => scheduleOrderCardRefresh(o.id));
+        }
+
+        function appendNewOrderCards(startIndex, newOrders) {
+            const grid = document.getElementById('orders-grid');
+            if (!grid) {
+                renderScrollBottom();
+                return;
+            }
+            const phoneCounts = getPhoneCounts();
+            newOrders.forEach((order, offset) => {
+                const isDuplicate = order.phone && phoneCounts[String(order.phone).trim()] > 1;
+                grid.appendChild(OrderCard(order, startIndex + offset, appState.globalOptions, updateOrder, confirmDeleteOrder, isDuplicate, true));
+            });
+            updateHeaderSummary();
+            scrollOrdersToBottom();
+        }
+
+        function getOrderIdFromDropdownKey(key) {
+            const match = String(key || '').match(/^order-(.+?)-/);
+            return match ? match[1] : '';
+        }
+
+        function refreshDropdownCards(...keys) {
+            const ids = new Set(keys.map(getOrderIdFromDropdownKey).filter(Boolean));
+            if (!ids.size) {
+                renderKeepScroll();
+                return;
+            }
+            ids.forEach(id => scheduleOrderCardRefresh(id));
+        }
+
+        function refreshOrderAfterFieldChange(orderId, field, oldPhone = '') {
+            if (field === 'phone') {
+                const ids = new Set([String(orderId)]);
+                const nextOrder = appState.orders.find(o => String(o.id) === String(orderId));
+                const newPhone = String(nextOrder?.phone || '').trim();
+                appState.orders.forEach(o => {
+                    const phone = String(o.phone || '').trim();
+                    if ((oldPhone && phone === oldPhone) || (newPhone && phone === newPhone)) {
+                        ids.add(String(o.id));
+                    }
+                });
+                ids.forEach(id => scheduleOrderCardRefresh(id));
+                return;
+            }
+            scheduleOrderCardRefresh(orderId);
         }
 
         // 渲染应用
@@ -1521,11 +1908,7 @@
             root.className = 'cc-shell';
 
             // 查重逻辑
-            const phoneCounts = {};
-            appState.orders.forEach(o => {
-                const p = String(o.phone || '').trim();
-                if (p) phoneCounts[p] = (phoneCounts[p] || 0) + 1;
-            });
+            const phoneCounts = getPhoneCounts();
 
             // Header
             const header = document.createElement('header');
@@ -1533,10 +1916,10 @@
             header.innerHTML = `
                 <div class="px-4 h-14 flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="cc-logo">⌁</div>
+                        <div class="cc-logo">✦</div>
                         <div>
                             <h1 class="cc-title text-sm font-semibold">订单助手</h1>
-                            <p class="cc-subtitle text-xs">${appState.orders.length > 0 ? `${appState.orders.length} 个订单` : 'rules-engine / exact-match'}</p>
+                            <p id="order-count-label" class="cc-subtitle text-xs">${appState.orders.length > 0 ? `${appState.orders.length} 个订单` : 'rules-engine / exact-match'}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -1557,6 +1940,7 @@
 
             // Content
             const content = document.createElement('div');
+            content.id = 'orders-scroll';
             content.className = 'flex-1 overflow-y-auto';
             content.style.height = 'calc(100vh - 56px - 120px)';
 
@@ -1567,6 +1951,7 @@
                 contentInner.appendChild(WelcomeScreen());
             } else {
                 const grid = document.createElement('div');
+                grid.id = 'orders-grid';
                 grid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-4';
                 appState.orders.forEach((order, index) => {
                     const isDuplicate = order.phone && phoneCounts[String(order.phone).trim()] > 1;
@@ -1597,7 +1982,7 @@
                             ${!appState.inputText.trim() || appState.isProcessing ? 'disabled' : ''}
                             class="cc-send h-[42px] px-4 min-w-[62px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            ${appState.isProcessing ? '<div class="loader" style="width: 20px; height: 20px; border-width: 2px;"></div>' : '发送'}
+                            ${appState.isProcessing ? '<div class="loader" style="width: 18px; height: 18px;"></div>' : '发送 ↵'}
                         </button>
                     </div>
                     <p class="text-xs text-gray-400 mt-2 text-center">
@@ -1648,10 +2033,25 @@
         }
 
         // 初始化
+        let mouseFrame = null;
+        let latestMouseEvent = null;
+        document.addEventListener('pointermove', (e) => {
+            latestMouseEvent = e;
+            if (mouseFrame) return;
+            mouseFrame = requestAnimationFrame(() => {
+                if (latestMouseEvent) {
+                    document.body.style.setProperty('--mouse-x', `${latestMouseEvent.clientX}px`);
+                    document.body.style.setProperty('--mouse-y', `${latestMouseEvent.clientY}px`);
+                }
+                mouseFrame = null;
+            });
+        });
+
         document.addEventListener('click', () => {
             if (appState.openDropdown) {
+                const previousKey = appState.openDropdown;
                 appState.openDropdown = '';
-                render();
+                refreshDropdownCards(previousKey);
             }
         });
         fetchOptions();
