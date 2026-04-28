@@ -25,9 +25,10 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
             overflow-x: hidden;
             background-color: #f8fafc;
+            font-size: 13px;
         }
 
         /* 动态渐变文字 */
@@ -62,8 +63,8 @@
         .loader {
             width: 32px;
             height: 32px;
-            border: 3px solid #e5e7eb;
-            border-top-color: #3b82f6;
+            border: 2px solid color-mix(in srgb, var(--cc-border) 70%, transparent);
+            border-top-color: var(--cc-accent);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -202,143 +203,691 @@
         }
 
         .duplicate-highlight {
-            animation: breathing-red 2s infinite ease-in-out !important;
-            border-width: 2px !important;
-            background-color: #fff1f2 !important;
-            /* 浅淡红背景辅助辨识 */
+            border-color: #ef4444 !important;
+            animation: breathing-red 1.6s ease-in-out infinite;
         }
 
-        /* 🌟 新增：规则实验室弹窗样式 */
-        .settings-overlay {
+        .duplicate-highlight .cc-card-head {
+            background: color-mix(in srgb, #ef4444 12%, var(--cc-surface-2)) !important;
+        }
+
+        .duplicate-highlight .cc-card-head::after {
+            content: "重复订单";
+            margin-left: auto;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid color-mix(in srgb, #ef4444 55%, transparent);
+            color: #ef4444;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1.4;
+        }
+
+        /* 🌟 精简动画：仅保留核心反馈 */
+        .btn-hover-red:hover {
+            background-color: #991b1b !important;
+            color: white !important;
+        }
+
+        :root {
+            --cc-bg: #f7f7f4;
+            --cc-surface: #ffffff;
+            --cc-surface-2: #f0f0ea;
+            --cc-surface-3: #e8e6dc;
+            --cc-border: #d9d6c8;
+            --cc-border-soft: #ebe8de;
+            --cc-text: #1f211c;
+            --cc-muted: #747064;
+            --cc-faint: #9b9688;
+            --cc-accent: #d97706;
+            --cc-accent-2: #0f766e;
+            --cc-danger: #b91c1c;
+            --cc-warning-bg: #fff7d6;
+            --cc-warning-border: #f2d16b;
+            --cc-shadow: 0 16px 40px rgba(31, 33, 28, 0.08);
+            --cc-mono: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+        }
+
+        html[data-theme="dark"] {
+            color-scheme: dark;
+            --cc-bg: #171814;
+            --cc-surface: #20211d;
+            --cc-surface-2: #282923;
+            --cc-surface-3: #303128;
+            --cc-border: #3d3c32;
+            --cc-border-soft: #2e2f28;
+            --cc-text: #f1efe3;
+            --cc-muted: #b4ae9d;
+            --cc-faint: #847f70;
+            --cc-accent: #f2a93b;
+            --cc-accent-2: #51c5b3;
+            --cc-danger: #fb7185;
+            --cc-warning-bg: #3a321d;
+            --cc-warning-border: #7c6322;
+            --cc-shadow: 0 18px 46px rgba(0, 0, 0, 0.36);
+        }
+
+        html[data-theme="light"] {
+            color-scheme: light;
+        }
+
+        body {
+            background: var(--cc-bg) !important;
+            color: var(--cc-text);
+            --mouse-x: 50vw;
+            --mouse-y: 50vh;
+        }
+
+        .cc-shell {
+            position: relative;
+            min-height: 100vh;
+            background:
+                linear-gradient(180deg, color-mix(in srgb, var(--cc-accent) 8%, transparent), transparent 260px);
+        }
+
+        .cc-shell::before {
+            content: "";
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 2000;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(300px circle at var(--mouse-x) var(--mouse-y),
+                    color-mix(in srgb, var(--cc-accent) 9%, transparent),
+                    transparent 58%);
+            opacity: 0.42;
+            transition: opacity 0.2s ease;
+        }
+
+        .cc-shell>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cc-header {
+            border-bottom: 1px solid var(--cc-border);
+            background: color-mix(in srgb, var(--cc-surface) 88%, transparent);
+            backdrop-filter: blur(18px);
+        }
+
+        .cc-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            border: 1px solid var(--cc-border);
+            background: color-mix(in srgb, var(--cc-surface-2) 86%, transparent);
+            color: var(--cc-accent);
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: fadeIn 0.2s ease-out;
+            font-family: var(--cc-mono);
+            font-size: 15px;
+            font-weight: 750;
+            box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
         }
 
-        .settings-panel {
-            background: white;
-            width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
-            border-radius: 16px;
-            display: flex;
-            flex-child: column;
-            flex-direction: column;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        .cc-title {
+            color: var(--cc-text);
+            letter-spacing: 0;
+        }
+
+        .cc-subtitle,
+        .cc-muted {
+            color: var(--cc-muted);
+        }
+
+        .cc-chip {
+            height: 32px;
+            padding: 0 11px;
+            border: 1px solid var(--cc-border);
+            border-radius: 9px;
+            background: color-mix(in srgb, var(--cc-surface) 86%, var(--cc-bg));
+            color: var(--cc-text);
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-weight: 680;
+            font-family: inherit;
+            box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, color 0.15s ease;
+        }
+
+        .cc-chip:hover {
+            background: var(--cc-surface-3);
+            border-color: color-mix(in srgb, var(--cc-accent) 45%, var(--cc-border));
+            transform: translateY(-1px);
+        }
+
+        .cc-chip-danger {
+            color: var(--cc-danger);
+        }
+
+        .cc-chip-primary {
+            background: color-mix(in srgb, var(--cc-accent) 16%, var(--cc-surface));
+            color: var(--cc-text);
+            border-color: color-mix(in srgb, var(--cc-accent) 42%, var(--cc-border));
+        }
+
+        .cc-card {
+            position: relative;
+            background: var(--cc-surface) !important;
+            border: 1px solid var(--cc-border) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--cc-shadow);
+            color: var(--cc-text);
             overflow: hidden;
         }
 
-        .settings-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid #f1f5f9;
+        .cc-card::before {
+            display: none;
+        }
+
+        .cc-card:hover {
+            border-color: color-mix(in srgb, var(--cc-accent) 28%, var(--cc-border)) !important;
+        }
+
+        .cc-card-enter {
+            animation: card-type-in 0.42s ease both;
+        }
+
+        @keyframes card-type-in {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+                clip-path: inset(0 0 100% 0);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+                clip-path: inset(0 0 0 0);
+            }
+        }
+
+        .cc-card-head {
+            background: var(--cc-surface-2);
+            border-bottom: 1px solid var(--cc-border);
+        }
+
+        .cc-input-area {
+            border-top: 1px solid var(--cc-border);
+            background: color-mix(in srgb, var(--cc-surface) 94%, transparent);
+            backdrop-filter: blur(18px);
+        }
+
+        .cc-composer {
+            background: var(--cc-surface);
+            border: 1px solid var(--cc-border);
+            border-radius: 10px;
+            box-shadow: var(--cc-shadow);
+        }
+
+        .cc-send {
+            background: color-mix(in srgb, var(--cc-accent) 18%, var(--cc-surface));
+            color: var(--cc-text);
+            border: 1px solid color-mix(in srgb, var(--cc-accent) 40%, var(--cc-border));
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 780;
+            box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
+            transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .cc-send:hover {
+            background: color-mix(in srgb, var(--cc-accent) 28%, var(--cc-surface));
+            border-color: color-mix(in srgb, var(--cc-accent) 58%, var(--cc-border));
+            transform: translateY(-1px);
+        }
+
+        .cc-loading-card {
+            min-height: 162px;
+            padding: 18px;
+        }
+
+        .cc-type-line {
+            position: relative;
+            display: block;
+            width: fit-content;
+            max-width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            font-family: var(--cc-mono);
+            color: var(--cc-muted);
+            border-right: 2px solid var(--cc-accent);
+            animation: type-line 1.8s steps(28, end) infinite, caret-blink 0.8s steps(2, start) infinite;
+        }
+
+        .cc-scan-row {
+            height: 9px;
+            border-radius: 999px;
+            background: linear-gradient(90deg,
+                    var(--cc-surface-2),
+                    color-mix(in srgb, var(--cc-accent) 28%, var(--cc-surface-2)),
+                    var(--cc-surface-2));
+            background-size: 220% 100%;
+            animation: scan-row 1.25s ease-in-out infinite;
+        }
+
+        .cc-scan-row:nth-child(2) {
+            width: 72%;
+            animation-delay: 0.12s;
+        }
+
+        .cc-scan-row:nth-child(3) {
+            width: 88%;
+            animation-delay: 0.24s;
+        }
+
+        @keyframes type-line {
+            0% {
+                max-width: 0;
+            }
+
+            52%,
+            100% {
+                max-width: 28ch;
+            }
+        }
+
+        @keyframes caret-blink {
+            to {
+                border-color: transparent;
+            }
+        }
+
+        @keyframes scan-row {
+            from {
+                background-position: 100% 0;
+            }
+
+            to {
+                background-position: -120% 0;
+            }
+        }
+
+        .cc-welcome {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 48px 18px;
+        }
+
+        .cc-terminal {
+            background: var(--cc-surface);
+            border: 1px solid var(--cc-border);
+            border-radius: 10px;
+            box-shadow: var(--cc-shadow);
+            overflow: hidden;
+        }
+
+        .cc-terminal-bar {
+            background: var(--cc-surface-2);
+            border-bottom: 1px solid var(--cc-border);
+            padding: 10px 14px;
+            font-family: var(--cc-mono);
+            color: var(--cc-muted);
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .cc-terminal-body {
+            padding: 20px;
+            font-family: var(--cc-mono);
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .cc-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: var(--cc-accent);
+            vertical-align: -3px;
+            animation: blink 1s steps(2, start) infinite;
+        }
+
+        @keyframes blink {
+            to {
+                visibility: hidden;
+            }
+        }
+
+        input,
+        textarea,
+        select {
+            background-color: var(--cc-surface) !important;
+            color: var(--cc-text) !important;
+            border-color: var(--cc-border) !important;
+            border-radius: 7px !important;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--cc-accent) !important;
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--cc-accent) 20%, transparent) !important;
+        }
+
+        label,
+        th {
+            color: var(--cc-muted) !important;
+        }
+
+        .bg-white,
+        .bg-gray-50,
+        .bg-blue-50\/70,
+        .bg-blue-50\/50,
+        .bg-gray-50\/50,
+        .bg-gray-50\/30 {
+            background-color: var(--cc-surface) !important;
+        }
+
+        .border-gray-100,
+        .border-gray-200,
+        .border-blue-100,
+        .border-dashed {
+            border-color: var(--cc-border-soft) !important;
+        }
+
+        .text-gray-900,
+        .text-gray-800,
+        .text-gray-700,
+        .text-blue-800,
+        .text-blue-600 {
+            color: var(--cc-text) !important;
+        }
+
+        .text-gray-600,
+        .text-gray-500,
+        .text-gray-400 {
+            color: var(--cc-muted) !important;
+        }
+
+        table thead {
+            background: var(--cc-surface-2) !important;
+        }
+
+        table tbody {
+            background: var(--cc-surface) !important;
+        }
+
+        .toast,
+        .modal-content {
+            background: var(--cc-surface) !important;
+            border-color: var(--cc-border) !important;
+            color: var(--cc-text);
+        }
+
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.62);
+        }
+
+        .search-item:hover {
+            background: var(--cc-surface-2) !important;
+        }
+
+        .cc-review {
+            background: var(--cc-warning-bg) !important;
+            border-color: var(--cc-warning-border) !important;
+        }
+
+        .cc-select {
+            position: relative;
+        }
+
+        .cc-select-button {
+            width: 100%;
+            height: 32px;
+            border: 1px solid var(--cc-border);
+            border-radius: 7px;
+            background: var(--cc-surface);
+            color: var(--cc-text);
+            padding: 0 28px 0 9px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .cc-select-button::after {
+            content: "";
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            width: 7px;
+            height: 7px;
+            border-right: 1.8px solid var(--cc-muted);
+            border-bottom: 1.8px solid var(--cc-muted);
+            transform: translateY(-65%) rotate(45deg);
+            pointer-events: none;
+        }
+
+        .cc-select-menu {
+            position: absolute;
+            z-index: 100;
+            left: 0;
+            right: 0;
+            top: calc(100% + 6px);
+            max-height: 240px;
+            overflow-y: auto;
+            border: 1px solid var(--cc-border);
+            border-radius: 9px;
+            background: var(--cc-surface);
+            box-shadow: var(--cc-shadow);
+            padding: 5px;
+        }
+
+        .cc-select-option {
+            min-height: 30px;
+            border-radius: 6px;
+            padding: 6px 8px;
+            color: var(--cc-text);
+            font-size: 13px;
+            font-weight: 650;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: #f8fafc;
-        }
-
-        .settings-body {
-            padding: 24px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .settings-footer {
-            padding: 16px 24px;
-            border-top: 1px solid #f1f5f9;
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            background: #f8fafc;
-        }
-
-        .config-section {
-            margin-bottom: 32px;
-        }
-
-        .config-title {
-            font-size: 14px;
-            font-weight: 800;
-            color: #1e293b;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
             gap: 8px;
         }
 
-        .rule-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+        .cc-select-option:hover,
+        .cc-select-option.active {
+            background: var(--cc-surface-2);
         }
 
-        .rule-card input {
-            padding: 6px 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            font-size: 13px;
+        .cc-select-option.active::after {
+            content: "✓";
+            color: var(--cc-accent);
+            font-weight: 900;
+        }
+
+        .bg-gradient-to-r,
+        .bg-gradient-to-br {
+            background-image: none !important;
+        }
+
+        .shadow-lg,
+        .shadow-sm,
+        .shadow-md,
+        .shadow-xl {
+            box-shadow: none !important;
+        }
+
+        .hover\:bg-blue-100:hover,
+        .hover\:bg-blue-50:hover,
+        .hover\:bg-gray-50\/50:hover {
+            background-color: var(--cc-surface-2) !important;
+        }
+
+        html[data-theme="dark"] select {
+            background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23b4ae9d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        }
+
+        .note-textarea {
+            min-height: 40px;
+            height: 40px;
+            line-height: 22px;
+            padding-top: 9px !important;
+            padding-bottom: 9px !important;
+            white-space: pre-wrap;
+        }
+
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.8;
         }
     </style>
 </head>
 
 <body>
+    <canvas id="particleCanvas"></canvas>
     <div id="root"></div>
     <div class="toast-container" id="toast-container"></div>
     <div id="modal-root"></div>
-    <div id="settings-root"></div>
 
     <script>
-        // 🌟 动态适配后端地址 (支持局域网 IP 访问)
-        const BACKEND_BASE_URL = window.location.origin.includes('http')
-            ? window.location.origin
-            : 'http://127.0.0.1:5000';
+        // 🌟 智能适配后端地址：锁定 5005 端口（避开后台僵尸进程）
+        const BACKEND_BASE_URL = (() => {
+            // 🌟 核心改进：如果是通过 http/https 协议访问的（不管是 IP 还是 域名），直接使用当前源
+            // 这能完美解决多网卡（127.0.0.1 vs 10.20.0.1）导致的连接失败问题
+            if (window.location.protocol.startsWith('http')) {
+                return `${window.location.origin}/api`;
+            }
+            // 如果是直接打开本地 .html 文件，则回退到 127.0.0.1
+            return 'http://127.0.0.1:5005/api';
+        })();
 
-        // --- 拖拽功能助手 ---
-        function makeDraggable(header, target) {
-            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            header.onmousedown = (e) => {
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
-                
-                // 🌟 核心修复：点击瞬间锁定当前位置，切换为绝对定位以脱离 Flex 居中限制
-                const rect = target.getBoundingClientRect();
-                target.style.position = 'absolute';
-                target.style.top = rect.top + 'px';
-                target.style.left = rect.left + 'px';
-                target.style.transform = 'none';
-                target.style.margin = '0';
-                
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                
-                document.onmouseup = () => {
-                    document.onmouseup = null;
-                    document.onmousemove = null;
-                    header.style.cursor = 'grab';
-                };
-                document.onmousemove = (e) => {
-                    e.preventDefault();
-                    pos1 = pos3 - e.clientX;
-                    pos2 = pos4 - e.clientY;
-                    pos3 = e.clientX;
-                    pos4 = e.clientY;
-                    target.style.top = (target.offsetTop - pos2) + "px";
-                    target.style.left = (target.offsetLeft - pos1) + "px";
-                };
-                header.style.cursor = 'grabbing';
-            };
+        // 🌟 科技感粒子特效系统
+        class ParticleSystem {
+            constructor() {
+                this.canvas = document.getElementById('particleCanvas');
+                if (!this.canvas) return;
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.mouse = { x: -1000, y: -1000, vx: 0, vy: 0 };
+                this.lastMouse = { x: -1000, y: -1000 };
+
+                this.init();
+                this.animate();
+
+                window.addEventListener('resize', () => this.resize());
+                window.addEventListener('mousemove', (e) => {
+                    this.lastMouse.x = this.mouse.x;
+                    this.lastMouse.y = this.mouse.y;
+                    this.mouse.x = e.clientX;
+                    this.mouse.y = e.clientY;
+                    this.mouse.vx = this.mouse.x - this.lastMouse.x;
+                    this.mouse.vy = this.mouse.y - this.lastMouse.y;
+                });
+                window.addEventListener('mouseout', () => {
+                    this.mouse.x = -1000;
+                    this.mouse.y = -1000;
+                });
+            }
+
+            init() {
+                this.resize();
+                // 适中的粒子密度
+                const numParticles = Math.min(Math.floor((window.innerWidth * window.innerHeight) / 10000), 140);
+                for (let i = 0; i < numParticles; i++) {
+                    this.particles.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        vx: (Math.random() - 0.5) * 1.2,
+                        vy: (Math.random() - 0.5) * 1.2,
+                        radius: Math.random() * 1.5 + 0.8,
+                        baseVx: (Math.random() - 0.5) * 0.8,
+                        baseVy: (Math.random() - 0.5) * 0.8
+                    });
+                }
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            animate() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // 判断当前主题以使用适配的颜色
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const colorBase = isDark ? '242, 169, 59' : '217, 119, 6'; // 使用 --cc-accent 色系
+
+                this.ctx.fillStyle = `rgba(${colorBase}, 0.8)`;
+
+                for (let i = 0; i < this.particles.length; i++) {
+                    let p = this.particles[i];
+
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // 边界反弹
+                    if (p.x < 0 || p.x > this.canvas.width) p.vx *= -1;
+                    if (p.y < 0 || p.y > this.canvas.height) p.vy *= -1;
+
+                    // 鼠标交互：发散与避让效果
+                    let dx = this.mouse.x - p.x;
+                    let dy = this.mouse.y - p.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 200) {
+                        const force = (200 - dist) / 200;
+                        p.x -= (dx / dist) * force * 5;
+                        p.y -= (dy / dist) * force * 5;
+
+                        // 根据鼠标移动速度给粒子附加惯性（发散感）
+                        const mouseSpeed = Math.sqrt(this.mouse.vx * this.mouse.vx + this.mouse.vy * this.mouse.vy);
+                        if (mouseSpeed > 2) {
+                            p.vx += (this.mouse.vx * force * 0.15);
+                            p.vy += (this.mouse.vy * force * 0.15);
+                        }
+                    }
+
+                    // 速度回归基准（阻尼效果），避免粒子越跑越快
+                    p.vx = p.vx * 0.94 + p.baseVx * 0.06;
+                    p.vy = p.vy * 0.94 + p.baseVy * 0.06;
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+
+                    // 粒子之间连线（星座效果）
+                    for (let j = i + 1; j < this.particles.length; j++) {
+                        let p2 = this.particles[j];
+                        let dx2 = p.x - p2.x;
+                        let dy2 = p.y - p2.y;
+                        let dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+                        // 适中的连线距离，保持清爽
+                        if (dist2 < 120) {
+                            this.ctx.beginPath();
+                            this.ctx.strokeStyle = `rgba(${colorBase}, ${0.3 * (1 - dist2 / 120)})`;
+                            this.ctx.lineWidth = 0.6;
+                            this.ctx.moveTo(p.x, p.y);
+                            this.ctx.lineTo(p2.x, p2.y);
+                            this.ctx.stroke();
+                        }
+                    }
+                }
+
+                requestAnimationFrame(() => this.animate());
+            }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new ParticleSystem();
+        });
 
         // Toast 通知
         const toast = {
@@ -376,8 +925,8 @@
                     <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">${title}</h3>
                     <p style="color: #6b7280; margin-bottom: 24px;">${description}</p>
                     <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                        <button id="cancel-btn" style="padding: 8px 16px; border: 1px solid #d1d5db; border-radius: 6px; background: white; cursor: pointer;">取消</button>
-                        <button id="confirm-btn" style="padding: 8px 16px; border: none; border-radius: 6px; background: #3b82f6; color: white; cursor: pointer;">确认</button>
+                        <button id="cancel-btn" class="cc-chip" style="height: 40px; min-width: 88px; justify-content: center; cursor: pointer;">取消</button>
+                        <button id="confirm-btn" class="cc-chip cc-chip-primary" style="height: 40px; min-width: 88px; justify-content: center; cursor: pointer;">确认</button>
                     </div>
                 </div>
             `;
@@ -409,21 +958,19 @@
 
         // SVG 图标
         const icons = {
+            checkCircle: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>`,
+            user: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
             sparkles: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364-.707-.707M6.343 6.343l-.707-.707m12.728 0-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/></svg>`,
-            send: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: translate(-1px, 1px);"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>`,
+            send: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`,
             download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`,
             trash: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
             trashSmall: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
             chevronDown: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
             chevronUp: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>`,
             package: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></svg>`,
-            search: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
             loader: `<svg class="loader-icon" width="32" height="32" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg>`,
-            settings: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
-            x: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
-            edit: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`
+            search: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`
         };
-
 
         // 主应用状态
         let appState = {
@@ -438,8 +985,42 @@
             },
             isProcessing: false,
             inputText: '',
-            mousePosition: { x: 0, y: 0 }
+            mousePosition: { x: 0, y: 0 },
+            theme: localStorage.getItem('order-helper-theme') || 'dark',
+            openDropdown: ''
         };
+
+        function escAttr(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function customSelect(key, field, value, options, placeholder, orderId) {
+            const cleanOptions = [...new Set((options || []).filter(v => v !== undefined && v !== null))];
+            const current = value || '';
+            const isOpen = appState.openDropdown === key;
+            const allOptions = cleanOptions.includes(current) || !current ? cleanOptions : [current, ...cleanOptions];
+            return `
+                <div class="cc-select" onclick="event.stopPropagation()">
+                    <button type="button" class="cc-select-button" onclick="toggleDropdown('${key}')">
+                        ${escAttr(current || placeholder || '-- 请选择 --')}
+                    </button>
+                    ${isOpen ? `
+                        <div class="cc-select-menu">
+                            <div class="cc-select-option ${!current ? 'active' : ''}" onclick="selectOrderOption(${orderId}, '${field}', '')">${escAttr(placeholder || '-- 请选择 --')}</div>
+                            ${allOptions.map(opt => `
+                                <div class="cc-select-option ${opt === current ? 'active' : ''}" onclick="selectOrderOption(${orderId}, '${field}', decodeURIComponent('${encodeURIComponent(opt)}'))">
+                                    <span>${escAttr(opt)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
 
         // 动画角色组件
         function AnimatedCharacters() {
@@ -496,7 +1077,7 @@
                     <div class="pupil" style="width: 12px; height: 12px; border-radius: 50%; background: #2d2d2d; transition: transform 0.1s;"></div>
                     <div class="pupil" style="width: 12px; height: 12px; border-radius: 50%; background: #2d2d2d; transition: transform 0.1s;"></div>
                 </div>
-                <div style="position: absolute; left: 40px; top: 88px; width: 50px; height: 4px; background: #2d2d2d; border-radius: 2px; transition: all 0.7s ease-in-out;"></div>
+                <div class="mouth-line" style="position: absolute; left: 54px; top: 88px; width: 40px; height: 4px; background: #2d2d2d; border-radius: 2px; transition: all 0.7s ease-in-out;"></div>
             `;
 
             container.appendChild(purple);
@@ -520,11 +1101,18 @@
                     char.style.transform = `skewX(${bodySkew}deg)`;
 
                     const faceContainer = char.querySelector('div[style*="transition"]');
+                    const mouthLine = char.querySelector('.mouth-line');
                     if (faceContainer) {
                         const baseLeft = char === purple ? 45 : char === black ? 26 : char === orange ? 82 : 52;
                         const baseTop = char === purple ? 40 : char === black ? 32 : char === orange ? 90 : 40;
                         faceContainer.style.left = `${baseLeft + faceX}px`;
                         faceContainer.style.top = `${baseTop + faceY}px`;
+
+                        // 🌟 如果是黄色小人，让它的横线嘴巴也跟着动 (修正基准点为 54px)
+                        if (mouthLine) {
+                            mouthLine.style.left = `${54 + faceX * 1.2}px`;
+                            mouthLine.style.top = `${88 + faceY * 0.8}px`;
+                        }
                     }
 
                     // 眼珠跟随
@@ -549,257 +1137,238 @@
         // 欢迎屏幕
         function WelcomeScreen() {
             const container = document.createElement('div');
-            container.className = 'flex flex-col items-center justify-center px-4';
+            container.className = 'cc-welcome';
             container.style.minHeight = 'calc(100vh - 200px)';
-
-            const charactersDiv = document.createElement('div');
-            charactersDiv.style.marginBottom = '2rem';
-            charactersDiv.appendChild(AnimatedCharacters());
-
-            const textDiv = document.createElement('p');
-            textDiv.className = 'text-center max-w-md text-lg font-bold animated-gradient-text';
-            textDiv.style.lineHeight = '1.75';
-            textDiv.textContent = '粘贴订单文本,AI 自动识别收货信息、货品明细，助您快速完成订单录入';
-
-            container.appendChild(charactersDiv);
-            container.appendChild(textDiv);
+            container.innerHTML = `
+                <div class="cc-terminal">
+                    <div class="cc-terminal-bar">
+                        <span>order-helper / rules-engine</span>
+                        <span>${new Date().toLocaleDateString()}</span>
+                    </div>
+                    <div class="cc-terminal-body">
+                        <div><span style="color: var(--cc-accent);">></span> 粘贴订单原文，系统开始拆单</div>
+                        <div><span style="color: var(--cc-accent);">></span> AI 只切割文本，货品和快递由本地规则查表</div>
+                        <div><span style="color: var(--cc-accent);">></span> 普通货品查规格编号，收银机/一体称查组合装货品名称</div>
+                        <div><span style="color: var(--cc-accent);">></span> 查不到会标记待确认，不自动猜 <span class="cc-cursor"></span></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                    <div class="cc-card p-4">
+                        <div class="text-xs cc-muted font-bold mb-1">PRODUCT</div>
+                        <div class="text-sm font-bold">精确查表，不走模糊匹配</div>
+                    </div>
+                    <div class="cc-card p-4">
+                        <div class="text-xs cc-muted font-bold mb-1">EXPRESS</div>
+                        <div class="text-sm font-bold">按省份、重量、品类判定</div>
+                    </div>
+                    <div class="cc-card p-4">
+                        <div class="text-xs cc-muted font-bold mb-1">EXPORT</div>
+                        <div class="text-sm font-bold">订单表和货品表一键导出</div>
+                    </div>
+                </div>
+            `;
 
             return container;
         }
 
         // 订单卡片
-        function OrderCard(order, index, globalOptions, onUpdate, onDelete, isDuplicate = false) {
+        function OrderCard(order, index, globalOptions, onUpdate, onDelete, isDuplicate = false, animate = true) {
             const card = document.createElement('div');
-            card.className = `bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all card-animate ${isDuplicate ? 'duplicate-highlight shadow-xl shadow-red-200' : ''}`;
+            card.className = `cc-card ${animate ? 'cc-card-enter' : ''} p-3 mb-3 transition-all ${isDuplicate ? 'duplicate-highlight' : ''}`;
             card.style.height = 'fit-content';
+            card.dataset.orderId = String(order.id);
 
             if (order.loading) {
                 card.innerHTML = `
-                    <div class="p-8 flex flex-col items-center justify-center">
-                        <div class="loader mb-3"></div>
-                        <span class="text-sm text-gray-600">AI 正在识别...</span>
-                    </div>
-                `;
-                return card;
-            }
-
-            if (order.error) {
-                card.className = 'bg-red-50 rounded-xl border border-red-200 p-6 card-animate';
-                card.innerHTML = `
-                    <div class="flex items-start justify-between mb-4">
-                        <h3 class="text-base font-semibold text-red-900">解析失败</h3>
-                        <button onclick="confirmDeleteOrder(${order.id})" class="text-red-600 hover:text-red-800">${icons.trashSmall}</button>
-                    </div>
-                    <p class="text-sm text-red-600">${order.errType || '无法解析订单'}</p>
-                `;
-                return card;
-            }
-
-            // Header
-            const header = document.createElement('div');
-            header.className = 'px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50 flex items-center justify-between';
-            header.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <span class="text-xs font-extrabold text-blue-500 bg-blue-100/50 px-2 py-0.5 rounded-full">#${index + 1}</span>
-                    <h3 class="font-bold text-gray-900 text-sm">
-                        ${order.receiver || '未命名订单'}
-                    </h3>
-                </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-base font-bold text-blue-600">¥${order.total || 0}</span>
-                    <button onclick="confirmDeleteOrder(${order.id})" class="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full flex items-center justify-center transition-all">
-                        ${icons.trashSmall}
-                    </button>
-                </div>
-            `;
-
-            const content = document.createElement('div');
-            content.className = 'p-3 space-y-3'; // 从 p-4 space-y-4 改为 p-3 space-y-3
-            content.innerHTML = `
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2"> <!-- gap 从 3 改为 2 -->
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">收货人</label>
-                        <input type="text" value="${order.receiver || ''}" onchange="updateOrder(${order.id}, 'receiver', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white font-bold text-gray-700" />
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">手机号</label>
-                        <input type="text" value="${order.phone || ''}" onchange="updateOrder(${order.id}, 'phone', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white font-bold text-gray-700" />
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">应收合计</label>
-                        <input type="number" value="${order.total || 0}" onchange="updateOrder(${order.id}, 'total', parseFloat(this.value))" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-bold text-blue-600 bg-white" />
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">应收邮费</label>
-                        <input type="number" value="${order.freight || 0}" onchange="updateOrder(${order.id}, 'freight', parseFloat(this.value))" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white font-bold text-gray-700" />
-                    </div>
-                    
-                    <div class="space-y-1 col-span-2 md:col-span-3">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">收货地址</label>
-                        <input type="text" value="${order.address || ''}" onchange="updateOrder(${order.id}, 'address', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white font-bold text-gray-700" />
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">结算方式</label>
-                        <select onchange="updateOrder(${order.id}, 'payMethod', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-bold text-gray-700 ${order.payMethod === '欠款计应收' ? 'bg-yellow-100 border-yellow-300' : 'bg-white'} shadow-sm transition-colors duration-200">
-                            <option value="银行收款" ${order.payMethod === '银行收款' ? 'selected' : ''}>银行收款</option>
-                            <option value="欠款计应收" ${order.payMethod === '欠款计应收' ? 'selected' : ''}>欠款计应收</option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-1">
-                        <div class="h-4 flex items-center justify-between">
-                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">客户账号</label>
-                            <button onclick="openCustomerSearch(${order.id})" class="text-[10px] text-blue-500 hover:underline">精准搜库</button>
-                        </div>
-                        <select onchange="updateCustomerLink(${order.id}, this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-sm font-bold text-gray-700">
-                            <option value="">未关联</option>
-                            ${order.customer_candidates && order.customer_candidates.length > 0 ? `
-                                <optgroup label="✨ 智能匹配候选">
-                                    ${order.customer_candidates.map(c => `<option value="${c.客户账号}" ${window.findBestMatch([c.客户账号], order.account) === c.客户账号 ? 'selected' : ''}>${c.客户账号} (${c.客户名称})</option>`).join('')}
-                                </optgroup>
-                            ` : ''}
-                            ${globalOptions.customers && globalOptions.customers.length > 0 ? `
-                                <optgroup label="👥 所有客户">
-                                    ${globalOptions.customers.map(c => `<option value="${c.客户账号}" ${window.findBestMatch(globalOptions.customers.map(cc => cc.客户账号), order.account) === c.客户账号 ? 'selected' : ''}>${c.客户名称}</option>`).join('')}
-                                </optgroup>
-                            ` : ''}
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <div class="h-4 flex items-center">
-                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">收款账户</label>
-                        </div>
-                        <select onchange="updateOrder(${order.id}, 'receipt', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-bold text-gray-700 ${order.payMethod === '欠款计应收' ? 'bg-yellow-100 border-yellow-300' : 'bg-white'} shadow-sm transition-colors duration-200">
-                            <option value="">选择账户</option>
-                            ${globalOptions.receipts.map(r => `<option value="${r}" ${window.findBestMatch(globalOptions.receipts, order.receipt) === r ? 'selected' : ''}>${r}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <div class="h-4 flex items-center">
-                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">业务员</label>
-                        </div>
-                        <select onchange="updateOrder(${order.id}, 'salesman', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-sm font-bold text-gray-700">
-                            <option value="">选择业务员</option>
-                            ${globalOptions.salesmen.map(s => `<option value="${s}" ${window.findBestMatch(globalOptions.salesmen, order.salesman) === s ? 'selected' : ''}>${s}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <div class="h-4 flex items-center">
-                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">快递</label>
-                        </div>
-                        <select onchange="updateOrder(${order.id}, 'express', this.value)" class="w-full h-8 text-sm px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-sm font-bold text-gray-700">
-                            <option value="">自动识别中...</option>
-                            ${(globalOptions.expressOptions || ['顺丰速运', '圆通（渠道）', '中通（渠道）', '申通快递', '韵达快递', '邮政EMS', '德邦特惠', '极兔渠道（新）', '工厂代发', '工厂直发']).map(e => `<option value="${e}" ${order.express === e ? 'selected' : ''}>${e}</option>`).join('')}
-                        </select>
-                        <div class="text-[10px] text-gray-400 mt-1 leading-tight min-h-[1.2em]">${order.express_reason || ''}</div>
-                    </div>
-                </div>
-                <div class="border-t border-dashed border-gray-200 pt-2 space-y-1">
-                    <div class="h-4 flex items-center">
-                        <label class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">客服备注</label>
-                    </div>
-                    <textarea 
-                        onchange="updateOrder(${order.id}, 'note', this.value)" 
-                        placeholder="超出范围会自动换下..." 
-                        class="w-full text-sm p-1.5 border border-amber-100 bg-amber-50/30 rounded focus:outline-none focus:bg-white focus:border-blue-400 transition-all resize-none min-h-[2.5rem] font-bold text-gray-800"
-                        rows="1"
-                        oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
-                    >${order.note || ''}</textarea>
-                </div>
-                ${order.products && order.products.length > 0 ? `
-                    <div class="space-y-2">
-                        <button onclick="toggleProducts(${order.id})" class="w-full flex items-center justify-between h-9 px-3 hover:bg-blue-100/50 bg-blue-50/50 rounded-lg transition-all border border-blue-100/30"> <!-- h 从 10 改为 9 -->
-                            <div class="flex items-center gap-2 flex-1 min-w-0">
-                                ${icons.package}
-                                <span class="text-xs font-bold text-gray-700 whitespace-nowrap">货品清单 (${order.products.length} 件):</span>
-                                <span class="text-[13px] font-bold text-blue-600 truncate ml-1">
-                                    ${order.products.map(p => {
-                const icon = p.confidence < 90 ? '<span class="text-amber-500">⚠️</span>' : '';
-                return `${icon}${p.matchedName || p.searchName}*${p.qty}`;
-            }).join(' ')}
-                                </span>
+                    <div class="cc-loading-card">
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="loader"></div>
+                            <div>
+                                <div class="cc-type-line text-sm">${escAttr(order.progressText || '订单已进入解析队列')}</div>
+                                <div class="text-xs cc-muted mt-1">${escAttr(order.progressStep || 'streaming / rules-engine')}</div>
                             </div>
-                            <span id="chevron-${order.id}" class="text-gray-400 ml-2">${icons.chevronDown}</span>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="cc-scan-row w-full"></div>
+                            <div class="cc-scan-row"></div>
+                            <div class="cc-scan-row"></div>
+                        </div>
+                    </div>
+                `;
+                return card;
+            }
+
+            if (order.status === 'error') {
+                card.className = 'bg-red-50 rounded-xl p-4 border border-red-100 shadow-sm relative group mb-4';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-red-200 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded">ERROR</span>
+                            <h3 class="font-bold text-red-800 text-sm">解析失败</h3>
+                        </div>
+                        <button onclick="confirmDeleteOrder(${order.id})" class="h-8 w-8 flex items-center justify-center text-red-400 hover:bg-red-800 hover:text-white rounded-full transition-all border border-red-100 bg-white">
+                            ${icons.trash}
                         </button>
-                        <div id="products-${order.id}" style="display: none;" class="rounded-lg border border-gray-200 overflow-x-auto custom-scrollbar">
-                            <table class="min-w-[700px] w-full text-sm">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-1/4">货品名称</th>
-                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">货品编号</th>
-                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">条码</th>
-                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-28">规格</th>
-                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-20">数量</th>
-                                        <th class="px-2 py-2 text-left text-[11px] font-bold text-gray-400 uppercase w-24">价格</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${order.products.map((p, idx) => `
-                                        <tr class="border-b border-gray-100 hover:bg-gray-50/50 ${p.confidence < 90 ? 'bg-amber-50/50' : ''} transition-colors">
-                                            <td class="px-3 py-2">
-                                                <div class="relative group">
-                                                    <select onchange="updateProduct(${order.id}, ${idx}, 'matchedName', this.value)" class="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 bg-white shadow-sm">
-                                                        <option value="">-- 请选择 --</option>
-                                                        <option value="${p.matchedName}" selected>${p.matchedName}</option>
-                                                        ${p.candidates && p.candidates.length > 0 ? `
-                                                            <optgroup label="✨ 智能候选 (相似度高)">
-                                                                ${p.candidates.filter(c => c !== p.matchedName).map(c => `<option value="${c}">${c}</option>`).join('')}
-                                                            </optgroup>
-                                                        ` : ''}
-                                                        ${globalOptions.allProducts ? `
-                                                            <optgroup label="📦 所有库存货品 (手动查找)">
-                                                                ${globalOptions.allProducts.slice(0, 500).map(pn => `<option value="${pn}">${pn}</option>`).join('')}
-                                                            </optgroup>
-                                                        ` : ''}
-                                                    </select>
-                                                    <div class="text-[10px] mt-1 px-1 flex items-center justify-between">
-                                                        ${p.source === 'exact' ? '<span class="text-green-600 font-bold">● 精确匹配</span>' :
-                    p.source === 'special_map' ? '<span class="text-blue-600 font-bold">● 记忆纠错</span>' :
-                        p.source === 'fuzzy_engine' ? `<span class="text-amber-500 font-bold">● 智能纠错 (${p.confidence}%)</span>` :
-                            '<span class="text-gray-400">● 未匹配</span>'}
-                                                        <div class="flex items-center gap-2">
-                                                            ${(p.source === 'fuzzy_engine' || p.source === 'none' || !p.source) && p.matchedName && p.matchedName !== '未找到匹配' ? `
-                                                                <button onclick="confirmProductMatch(${order.id}, ${idx})" class="text-green-600 hover:underline font-bold">✓ 确认正确</button>
-                                                            ` : ''}
-                                                            <button onclick="openProductSearch(${order.id}, ${idx})" class="text-blue-500 hover:underline">手动精准搜库</button>
+                    </div>
+                    <p class="text-xs text-red-600 font-mono break-all leading-relaxed bg-white/50 p-2 rounded border border-red-50">${order.message || '未知解析错误'}</p>
+                `;
+                return card;
+            }
+
+            // Content
+            card.innerHTML = `
+                    <div class="cc-card-head flex justify-between items-center -mx-3 -mt-3 mb-3 px-4 py-2 border-l-[5px]" style="border-left-color: var(--cc-accent);">
+                        <div class="flex items-center gap-4">
+                            <span class="text-[10px] font-black px-2 py-0.5 rounded-md" style="background: var(--cc-text); color: var(--cc-bg);">#${index + 1}</span>
+                            <h3 class="font-bold text-lg tracking-tight">${order.receiver || '新订单'}</h3>
+                        </div>
+                        <button onclick="confirmDeleteOrder(${order.id})" class="cc-chip cc-chip-danger h-8 w-8 !px-0 justify-center">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="space-y-2.5">
+                        <!-- 第一排：收货核心与财务汇总 (4列等宽) -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div class="space-y-0.5">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">收货人</label>
+                                <input type="text" value="${order.receiver || ''}" onchange="updateOrder(${order.id}, 'receiver', this.value)" class="w-full h-8 text-[13px] px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-bold" />
+                            </div>
+                            <div class="space-y-0.5">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">手机号</label>
+                                <input type="text" value="${order.phone || ''}" onchange="updateOrder(${order.id}, 'phone', this.value)" class="w-full h-8 text-[13px] px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-bold" />
+                            </div>
+                            <div class="space-y-0.5">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">应收合计</label>
+                                <input type="number" value="${order.total || 0}" onchange="updateOrder(${order.id}, 'total', this.value)" class="w-full h-8 text-[13px] px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white font-black text-blue-600 text-center" />
+                            </div>
+                            <div class="space-y-0.5">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">应收邮费</label>
+                                <input type="number" value="${order.freight || 0}" onchange="updateOrder(${order.id}, 'freight', this.value)" class="w-full h-8 text-[13px] px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 text-center" />
+                            </div>
+                        </div>
+
+                        <!-- 第二排：地址 (独占一行) -->
+                        <div class="space-y-0.5">
+                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">收货地址</label>
+                            <input type="text" value="${order.address || ''}" onchange="updateOrder(${order.id}, 'address', this.value)" class="w-full h-8 text-[13px] px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-medium" />
+                        </div>
+
+                        <!-- 第三排：业务属性 (重新分配比例) -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 py-2 border-y border-dashed border-gray-100">
+                             <div class="md:col-span-2 space-y-0.5">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">客户账号 (长字段)</label>
+                                <input type="text" value="${order.account || ''}" onchange="updateOrder(${order.id}, 'account', this.value)" class="w-full h-8 text-[13px] px-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold text-gray-800" />
+                            </div>
+                            <div class="space-y-0.5">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">业务员</label>
+                                ${customSelect(`order-${order.id}-salesman`, 'salesman', order.salesman || '', globalOptions.salesmen, '-- 请选择 --', order.id)}
+                            </div>
+                            <div class="space-y-0.5 relative">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">快递公司</label>
+                                ${(() => {
+                    const options = [...globalOptions.expressOptions];
+                    if (order.express && !options.includes(order.express)) options.push(order.express);
+                    return customSelect(`order-${order.id}-express`, 'express', order.express || '', options, '-- 自动计算 --', order.id);
+                })()}
+                                <div class="h-[14px] w-full"></div>
+                                <p class="absolute right-0 bottom-0 text-[10px] text-gray-400 mt-0.5 px-1 font-medium leading-[1.1] whitespace-nowrap z-10 pointer-events-none" title="${order.expressReason || '依据判定'}">
+                                    💡 ${order.expressReason || 'AI依据规则库判定'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- 第四排：财务关键字段 (并排) -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="space-y-0.5">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">结算方式</label>
+                                ${customSelect(`order-${order.id}-payMethod`, 'payMethod', order.payMethod || '欠款计应收', ['银行收款', '欠款计应收'], '-- 请选择 --', order.id)}
+                            </div>
+                            <div class="space-y-0.5">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">收款账户</label>
+                                ${(() => {
+                    const receipts = [...globalOptions.receipts];
+                    if (order.receipt && !receipts.includes(order.receipt)) receipts.push(order.receipt);
+                    return customSelect(`order-${order.id}-receipt`, 'receipt', order.receipt || '', receipts, '-- 选择账户 --', order.id);
+                })()}
+                            </div>
+                        </div>
+
+                        <!-- 第五排：备注 (单独一行，自动换行) -->
+                        <div class="space-y-0.5">
+                             <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">客户备注 / 细节说明</label>
+                             <textarea onchange="updateOrder(${order.id}, 'note', this.value)" class="note-textarea w-full text-[13px] px-3 border border-gray-200 rounded-lg bg-blue-50/50 text-blue-800 font-bold focus:outline-none resize-none overflow-hidden" oninput="autoResizeNote(this)">${order.note || ''}</textarea>
+                        </div>
+
+                        ${order.products && order.products.length > 0 ? `
+                            <div class="pt-1">
+                                <button onclick="toggleProducts(${order.id})" class="w-full flex items-center justify-between h-8 px-3 bg-blue-50/70 border border-blue-100 rounded-lg transition-all hover:bg-blue-100 shadow-sm group">
+                                    <div class="flex items-center gap-3 overflow-hidden">
+                                        <span class="text-blue-600">${icons.package}</span>
+                                        <span class="text-xs font-bold text-gray-700">货品清单 (${order.products.length} 件):</span>
+                                        <span class="text-xs text-blue-800 font-black truncate max-w-[450px]">
+                                            ${order.products.map(p => `${p.needsReview ? '[待确认] ' : ''}${p.matchedName || p.searchName} * ${p.qty}`).join(', ')}
+                                        </span>
+                                    </div>
+                                    <span id="chevron-${order.id}" class="text-blue-400 group-hover:text-blue-600">${icons.chevronDown}</span>
+                                </button>
+                                <div id="products-${order.id}" style="display: none;" class="mt-2 rounded-lg border border-gray-200 overflow-x-auto custom-scrollbar shadow-inner">
+                                    <table class="min-w-[700px] w-full text-sm">
+                                        <thead class="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                                <th class="px-3 py-2 text-left text-[10px] font-bold text-gray-400 uppercase w-1/3">货品名称</th>
+                                                <th class="px-2 py-2 text-left text-[10px] font-bold text-gray-400 uppercase">规格编号</th>
+                                                <th class="px-2 py-2 text-left text-[10px] font-bold text-gray-400 uppercase">条码</th>
+                                                <th class="px-2 py-2 text-left text-[10px] font-bold text-gray-400 uppercase w-20 text-center">数量</th>
+                                                <th class="px-2 py-2 text-left text-[10px] font-bold text-gray-400 uppercase w-24 text-center">单价</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white">
+                                            ${order.products.map((p, idx) => `
+                                                <tr class="border-t ${p.needsReview ? 'cc-review' : 'border-gray-100'} hover:bg-gray-50/50 transition-colors">
+                                                    <td class="px-3 py-2">
+                                                        <div class="flex gap-1.5 items-center">
+                                                            <select onchange="updateProduct(${order.id}, ${idx}, 'matchedName', this.value)" class="flex-1 text-[13px] px-2 py-1 border ${p.needsReview ? 'border-amber-400' : 'border-gray-200'} rounded-md focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+                                                                <option value="">-- 请选择 --</option>
+                                                                ${p.matchedName ? `<option value="${p.matchedName}" selected>${p.matchedName}</option>` : ''}
+                                                                ${p.candidates ? p.candidates.filter(c => c !== p.matchedName).map(c => `<option value="${c}">${c}</option>`).join('') : ''}
+                                                                <optgroup label="基础库项">
+                                                                    ${(globalOptions.allProducts || []).slice(0, 10).map(pn => `<option value="${pn}">${pn}</option>`).join('')}
+                                                                </optgroup>
+                                                            </select>
+                                                            <button onclick="openProductSearch(${order.id}, ${idx})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md border border-blue-100 transition-colors" title="全库精准搜索">
+                                                                ${icons.search}
+                                                            </button>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="px-2 py-2 text-xs text-gray-500 font-medium">${p.productInfo?.['货品编号'] || '—'}</td>
-                                            <td class="px-2 py-2 text-xs text-gray-400 font-mono">${p.productInfo?.['条码'] || '—'}</td>
-                                            <td class="px-2 py-2 text-xs text-gray-500">${p.productInfo?.['规格'] || '—'}</td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" value="${p.qty}" onchange="updateProduct(${order.id}, ${idx}, 'qty', parseInt(this.value))" class="w-full h-8 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-center" />
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" value="${p.price || 0}" onchange="updateProduct(${order.id}, ${idx}, 'price', parseFloat(this.value))" class="w-full h-8 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-center font-bold text-blue-600" />
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
+                                                        ${p.needsReview ? `<div class="mt-1 text-[11px] font-bold text-amber-700">原文：${p.searchName || '--'}，未在两个货品表中精确命中，请人工选择。</div>` : `<div class="mt-1 text-[10px] text-gray-400">原文：${p.searchName || '--'} · ${p.matchType || '精确匹配'}</div>`}
+                                                    </td>
+                                                    <td class="px-2 py-2 text-[11px] text-gray-500 font-mono">${p.spec_no || p.item_no || '--'}</td>
+                                                    <td class="px-2 py-2 text-[11px] text-gray-400 font-mono">${p.barcode || '--'}</td>
+                                                    <td class="px-2 py-2">
+                                                        <input type="number" value="${p.qty}" onchange="updateProduct(${order.id}, ${idx}, 'qty', parseInt(this.value))" class="w-full h-8 text-xs border border-gray-200 rounded-md text-center focus:border-blue-500" />
+                                                    </td>
+                                                    <td class="px-2 py-2">
+                                                        <input type="number" value="${p.price || 0}" onchange="updateProduct(${order.id}, ${idx}, 'price', parseFloat(this.value))" class="w-full h-8 text-xs border border-gray-200 rounded-md text-center font-bold text-blue-600 focus:border-blue-500" />
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <!-- 底部原文回显 -->
+                        <div class="mt-1 pt-2 border-t border-dashed border-gray-200">
+                            <div class="flex items-center gap-2 mb-1 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                                📝 待发送订单原始报数
+                            </div>
+                            <div class="bg-gray-50/50 rounded-lg p-2 text-[10px] text-gray-500 font-medium leading-normal italic border border-gray-100 shadow-inner">
+                                ${(order.raw || '无数据').replace(/\r?\n/g, ' ')}
+                            </div>
                         </div>
                     </div>
-                ` : ''}
-
-                <!-- 🌟 订单原文展示区 -->
-                <div class="mt-4 pt-3 border-t border-gray-100">
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center gap-1.5 px-1">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400/80"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">订单原文</span>
-                        </div>
-                        <div class="px-1">
-                            <div class="bg-gray-50/50 rounded-lg p-2 text-[11px] text-gray-700 font-bold font-mono whitespace-pre-wrap leading-tight border border-gray-100 text-left block overflow-y-auto" style="text-align: left !important; display: block !important; width: 100%; max-height: 100px;">${order.raw || '无原文数据'}</div>
-                        </div>
-                    </div>
-                </div>
-
             `;
-
-            card.appendChild(header);
-            card.appendChild(content);
 
             return card;
         }
@@ -823,7 +1392,6 @@
                             matchedName: matchedAccountCode
                         })
                     });
-                    toast.success('🧠 系统已自动同步关联', `下次识别 [${order.account}] 将自动匹配为 [${matchedAccountCode}]`);
                 } catch (e) {
                     console.error('学习同步失败:', e);
                 }
@@ -831,22 +1399,31 @@
             updateOrder(orderId, 'account', matchedAccountCode);
         };
 
-        window.confirmProductMatch = async (orderId, productIndex) => {
-            const order = appState.orders.find(o => o.id === orderId);
-            if (!order) return;
-            const p = order.products[productIndex];
-            if (!p || !p.searchName || !p.matchedName || p.matchedName === '未找到匹配') return;
+        window.toggleTheme = () => {
+            appState.theme = appState.theme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('order-helper-theme', appState.theme);
+            renderKeepScroll();
+        };
 
-            // 1. 触发学习逻辑
-            await learnCorrection('product', p.searchName, p.matchedName);
+        window.toggleDropdown = (key) => {
+            const previousKey = appState.openDropdown;
+            appState.openDropdown = previousKey === key ? '' : key;
+            refreshDropdownCards(previousKey, appState.openDropdown);
+        };
 
-            // 2. 更新本地状态，立即变蓝
-            p.source = 'special_map';
-            p.confidence = 100;
-            render();
+        window.selectOrderOption = (id, field, value) => {
+            appState.openDropdown = '';
+            updateOrder(id, field, value);
+        };
+
+        window.autoResizeNote = (el) => {
+            el.style.height = '40px';
+            el.style.height = `${Math.max(40, el.scrollHeight)}px`;
         };
 
         window.updateOrder = (id, field, value) => {
+            const oldOrder = appState.orders.find(o => o.id === id);
+            const oldPhone = String(oldOrder?.phone || '').trim();
             appState.orders = appState.orders.map(o => {
                 if (o.id === id) {
                     let newOrder = { ...o, [field]: value };
@@ -864,6 +1441,15 @@
                         }
                     }
 
+                    // 🌟 联动C: 快递修改触发学习
+                    if (field === 'express' && value) {
+                        const key = o.receiver || o.address;
+                        if (key && o.express.includes('待定')) {
+                            console.log(`🧠 系统正在同步学习快递规则: ${key} -> ${value}`);
+                            learnCorrection('express', key, value);
+                        }
+                    }
+
                     if (field === 'freight' || field === 'total') {
                         const prodSum = o.products.reduce((sum, p) => sum + (parseFloat(p.price || 0) * parseInt(p.qty || 1)), 0);
                         if (field === 'freight') {
@@ -874,7 +1460,7 @@
                 }
                 return o;
             });
-            render();
+            refreshOrderAfterFieldChange(id, field, oldPhone);
         };
 
         window.updateProduct = (orderId, productIndex, field, value) => {
@@ -888,14 +1474,23 @@
                         const oldMatch = products[productIndex].matchedName;
                         const searchName = p.name || p.searchName;
                         if (appState.globalOptions.allProductsData) {
-                            // 增强：去除空格并转字符串匹配，保障万无一失
                             const info = appState.globalOptions.allProductsData.find(s =>
                                 String(s['货品名称']).trim() === String(value).trim()
                             );
-                            if (info) p.productInfo = info;
+                            if (info) {
+                                p.productInfo = info;
+                                // 🌟 关键同步：把查到的原始列信息填进我们的标准字段里
+                                p.spec_no = info['规格编号'] || info['货品代码'] || info['编码'] || info['货品编号'] || '';
+                                p.item_no = info['货品编号'] || info['货品代码'] || info['商品编号'] || '';
+                                p.barcode = info['条码'] || info['货品条码'] || info['商品条码'] || '';
+                                p.spec = info['规格'] || info['货品规格'] || info['型号规格'] || '';
+                                p.needsReview = false;
+                                p.matchStatus = 'matched';
+                                p.matchType = 'manual';
+                            }
                         }
                         if (value && value !== oldMatch && searchName) {
-                            learnCorrection('product', searchName, value);
+                            learnCorrection('product', searchName, value, o.account);
                         }
                     }
 
@@ -912,151 +1507,47 @@
                 }
                 return o;
             });
-            render();
+            scheduleOrderCardRefresh(orderId);
         };
 
-        async function learnCorrection(type, rawName, matchedName) {
+        window.applyProductInfo = (orderId, productIndex, productDataIndex) => {
+            const info = appState.globalOptions.allProductsData?.[productDataIndex];
+            if (!info) return;
+
+            appState.orders = appState.orders.map(o => {
+                if (o.id !== orderId) return o;
+                const products = [...o.products];
+                const oldProduct = products[productIndex] || {};
+                const productInfo = info.productInfo || info;
+                products[productIndex] = {
+                    ...oldProduct,
+                    matchedName: info['货品名称'] || info.name || '',
+                    productInfo,
+                    spec_no: info['规格编号'] || info['货品代码'] || info['编码'] || '',
+                    item_no: info['货品编号'] || info['货品代码'] || info['商品编号'] || info.item_no || '',
+                    barcode: info['条码'] || info['货品条码'] || info['商品条码'] || '',
+                    spec: info['规格'] || info['货品规格'] || info['型号规格'] || '',
+                    needsReview: false,
+                    matchStatus: 'matched',
+                    matchType: 'manual'
+                };
+                const prodSum = products.reduce((sum, item) => sum + (parseFloat(item.price || 0) * parseInt(item.qty || 1)), 0);
+                return { ...o, products, total: prodSum + parseFloat(o.freight || 0) };
+            });
+            scheduleOrderCardRefresh(orderId);
+        };
+
+        async function learnCorrection(type, rawName, matchedName, customer) {
             try {
                 await fetch(`${BACKEND_BASE_URL}/learn`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type, rawName, matchedName })
+                    body: JSON.stringify({ type, rawName, matchedName, customer })
                 });
-                console.log(`💡 系统进步 [${type}]：记录了 ${rawName} -> ${matchedName}`);
-                toast.success('🧠 匹配引擎已自我升级', `型号 [${rawName}] 以后将自动纠错为 [${matchedName}]`);
+                console.log(`💡 系统进步 [${type}]：记录了 ${rawName} -> ${matchedName} (客户: ${customer || '未知'})`);
                 fetchOptions();
             } catch (e) { console.error('Learning Failed', e); }
         }
-
-        // --- 🌟 精准搜库逻辑 ---
-        window.openProductSearch = (orderId, productIndex) => {
-            const modalRoot = document.getElementById('modal-root');
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal-content" style="max-width: 600px; height: 500px; display: flex; flex-direction: column; position: relative;">
-                    <div id="search-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: grab; padding: 10px; background: #f8fafc; border-radius: 8px 8px 0 0; margin: -20px -20px 16px -20px;">
-                        <h3 style="font-size: 18px; font-weight: 700;">精准货品搜索 <span style="font-size: 10px; font-weight: normal; color: #94a3b8;">(支持拖动)</span></h3>
-                        <button id="close-search-btn" style="border:none; background:none; cursor:pointer;">${icons.x}</button>
-                    </div>
-                    <div style="position: relative; margin-bottom: 12px;">
-                        <div style="position: absolute; left: 12px; top: 10px; color: #94a3b8;">${icons.search}</div>
-                        <input type="text" id="prod-search-input" placeholder="输入型号关键词 (如: K4, X5, 520BG...)" style="width:100%; padding: 8px 12px 8px 36px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;" autocomplete="off" />
-                    </div>
-                    <div id="prod-search-results" class="custom-scrollbar" style="flex: 1; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 8px; background: #f8fafc;">
-                        <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px;">请输入关键词开始搜索...</div>
-                    </div>
-                </div>
-            `;
-            modalRoot.appendChild(modal);
-
-            modal.querySelector('#close-search-btn').onclick = () => modal.remove();
-            const input = modal.querySelector('#prod-search-input');
-            const resultsDiv = modal.querySelector('#prod-search-results');
-            const modalContent = modal.querySelector('.modal-content');
-            const modalHeader = modal.querySelector('#search-modal-header');
-
-            // 🌟 修复：防止点击内部时触发关闭
-            modalContent.onclick = (e) => e.stopPropagation();
-            
-            makeDraggable(modalHeader, modalContent);
-            input.focus();
-
-            input.oninput = (e) => {
-                const kw = e.target.value.trim().toUpperCase();
-                if (!kw) {
-                    resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">请输入关键词...</div>';
-                    return;
-                }
-
-                const matches = appState.globalOptions.allProducts.filter(p => p.toUpperCase().includes(kw)).slice(0, 50);
-                if (matches.length === 0) {
-                    resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">未找到匹配型号</div>';
-                } else {
-                    resultsDiv.innerHTML = matches.map(m => `
-                        <div class="search-result-item" data-val="${m.replace(/"/g, '&quot;')}" style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s;">
-                            <div style="font-size: 13px; font-weight: 600; color: #1e293b;">${m}</div>
-                        </div>
-                    `).join('');
-
-                    resultsDiv.querySelectorAll('.search-result-item').forEach(item => {
-                        item.onclick = () => {
-                            updateProduct(orderId, productIndex, 'matchedName', item.getAttribute('data-val'));
-                            modal.remove();
-                        };
-                        item.onmouseover = () => item.style.background = '#eff6ff';
-                        item.onmouseout = () => item.style.background = 'transparent';
-                    });
-                }
-            };
-        };
-
-        window.openCustomerSearch = (orderId) => {
-            const modalRoot = document.getElementById('modal-root');
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal-content" style="max-width: 600px; height: 500px; display: flex; flex-direction: column; position: relative;">
-                    <div id="customer-search-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: grab; padding: 10px; background: #fdf2f8; border-radius: 8px 8px 0 0; margin: -20px -20px 16px -20px;">
-                        <h3 style="font-size: 18px; font-weight: 700;">精准客户搜索 <span style="font-size: 10px; font-weight: normal; color: #94a3b8;">(支持拖动)</span></h3>
-                        <button id="close-cust-search-btn" style="border:none; background:none; cursor:pointer;">${icons.x}</button>
-                    </div>
-                    <div style="position: relative; margin-bottom: 12px;">
-                        <div style="position: absolute; left: 12px; top: 10px; color: #94a3b8;">${icons.search}</div>
-                        <input type="text" id="cust-search-input" placeholder="输入客户名称或账号关键词..." style="width:100%; padding: 8px 12px 8px 36px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;" autocomplete="off" />
-                    </div>
-                    <div id="cust-search-results" class="custom-scrollbar" style="flex: 1; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 8px; background: #fffafb;">
-                        <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px;">请输入名称或账号关键词搜索...</div>
-                    </div>
-                </div>
-            `;
-            modalRoot.appendChild(modal);
-
-            modal.querySelector('#close-cust-search-btn').onclick = () => modal.remove();
-            const input = modal.querySelector('#cust-search-input');
-            const resultsDiv = modal.querySelector('#cust-search-results');
-            const modalContent = modal.querySelector('.modal-content');
-            const modalHeader = modal.querySelector('#customer-search-modal-header');
-
-            // 🌟 修复：防止点击内部时触发关闭（如果未来添加了点击遮罩关闭逻辑）
-            modalContent.onclick = (e) => e.stopPropagation();
-            
-            makeDraggable(modalHeader, modalContent);
-            input.focus();
-
-            input.oninput = (e) => {
-                const kw = e.target.value.trim().toUpperCase();
-                if (!kw) {
-                    resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">请输入关键词...</div>';
-                    return;
-                }
-
-                const matches = (appState.globalOptions.customers || []).filter(c => 
-                    String(c.客户账号).toUpperCase().includes(kw) || 
-                    String(c.客户名称).toUpperCase().includes(kw)
-                ).slice(0, 50);
-
-                if (matches.length === 0) {
-                    resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">未找到匹配客户</div>';
-                } else {
-                    resultsDiv.innerHTML = matches.map(c => `
-                        <div class="search-result-item" data-acc="${c.客户账号}" style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s;">
-                            <div style="font-size: 13px; font-weight: 600; color: #1e293b;">${c.客户名称}</div>
-                            <div style="font-size: 11px; color: #64748b;">账号: ${c.客户账号}</div>
-                        </div>
-                    `).join('');
-
-                    resultsDiv.querySelectorAll('.search-result-item').forEach(item => {
-                        item.onclick = () => {
-                            updateCustomerLink(orderId, item.getAttribute('data-acc'));
-                            modal.remove();
-                        };
-                        item.onmouseover = () => item.style.background = '#fdf2f8';
-                        item.onmouseout = () => item.style.background = 'transparent';
-                    });
-                }
-            };
-        };
 
         window.confirmDeleteOrder = (id) => {
             showConfirmDialog(
@@ -1064,20 +1555,8 @@
                 '删除后无法恢复，请确认是否继续。',
                 () => {
                     appState.orders = appState.orders.filter(o => o.id !== id);
-                    render();
+                    renderKeepScroll();
                     toast.success('订单已删除');
-                }
-            );
-        };
-
-        window.clearAllOrders = () => {
-            showConfirmDialog(
-                '确认清空所有列表？',
-                '清空后无法找回，请确认是否继续。',
-                () => {
-                    appState.orders = [];
-                    render();
-                    toast.success('列表已清空');
                 }
             );
         };
@@ -1094,80 +1573,262 @@
             }
         };
 
+        // 🌟 新增：全库货品精准搜索弹窗 (支持名称与规格编号双向搜索)
+        window.openProductSearch = (orderId, productIndex) => {
+            const modalRoot = document.getElementById('modal-root');
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+
+            let allProdsData = appState.globalOptions.allProductsData || [];
+
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 600px; max-height: 80vh; display: flex; flex-direction: column; padding: 20px;">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <h3 class="text-lg font-bold text-gray-900">货品全库精准搜索</h3>
+                            <button onclick="fetchOptions().then(() => { modal.remove(); openProductSearch(orderId, productIndex); toast.success('数据同步成功'); })" class="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-600 hover:text-white transition-all flex items-center gap-1">
+                                🔄 强制同步最新库存
+                            </button>
+                        </div>
+                        <button id="close-search-btn" class="text-gray-400 hover:text-gray-600 p-1">${icons.trashSmall}</button>
+                    </div>
+                    
+                    <div class="relative mb-4">
+                        <input type="text" id="prod-search-input" placeholder="搜索货品名称 或 规格编号..." class="w-full h-10 px-10 border-2 border-blue-500 rounded-xl focus:outline-none shadow-sm text-[14px]" autocomplete="off" />
+                        <div class="absolute left-3 inset-y-0 flex items-center text-blue-500">${icons.search}</div>
+                    </div>
+
+                    <div id="search-results" class="flex-1 overflow-y-auto min-h-[300px] border border-gray-100 rounded-lg bg-gray-50/30">
+                        <div class="p-8 text-center text-gray-400 text-sm">
+                            请输入名称或编号进行快速匹配...
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-100 text-[11px] text-gray-400 flex justify-between items-center">
+                        <span>总库存数: ${allProdsData.length} 项</span>
+                        <span>支持 规格编号 搜索</span>
+                    </div>
+                </div>
+            `;
+            modalRoot.appendChild(modal);
+
+            const input = modal.querySelector('#prod-search-input');
+            const resultsDiv = modal.querySelector('#search-results');
+            input.focus();
+
+            const renderResults = (list) => {
+                if (list.length === 0) {
+                    resultsDiv.innerHTML = `<div class="p-8 text-center text-gray-400 text-sm">未找到匹配项</div>`;
+                    return;
+                }
+                resultsDiv.innerHTML = list.map(item => `
+                    <div class="search-item p-3 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors flex justify-between items-center group" data-index="${item.dataIndex}" data-name="${item.name}">
+                        <div class="flex flex-col">
+                            <span class="text-[13px] font-bold text-gray-800 group-hover:text-blue-700">${item.name}</span>
+                            <span class="text-[11px] text-blue-500 font-mono">规格编号: ${item['规格编号'] || '--'}　货品编号: ${item['货品编号'] || '--'}　条码: ${item['条码'] || '--'}</span>
+                            <span class="text-[11px] text-gray-400">规格: ${item['规格'] || '--'}</span>
+                        </div>
+                        <span class="text-blue-400 opacity-0 group-hover:opacity-100">${icons.checkCircle}</span>
+                    </div>
+                `).join('');
+
+                resultsDiv.querySelectorAll('.search-item').forEach(item => {
+                    item.onclick = () => {
+                        applyProductInfo(orderId, productIndex, parseInt(item.dataset.index));
+                        modal.remove();
+                        toast.success(`已关联货品: ${item.dataset.name}`);
+                    };
+                });
+            };
+
+            input.oninput = (e) => {
+                const kw = e.target.value.trim().toUpperCase();
+                if (!kw) {
+                    renderResults([]);
+                    return;
+                }
+                const matched = allProdsData.map((p, dataIndex) => ({ ...p, dataIndex })).filter(p => {
+                    const searchStr = `${p.name} ${p.item_no} ${p['规格编号'] || ''} ${p['货品编号'] || ''} ${p['条码'] || ''} ${p['规格'] || ''}`.toUpperCase();
+                    return searchStr.includes(kw);
+                }).slice(0, 100);
+                renderResults(matched);
+            };
+
+            modal.querySelector('#close-search-btn').onclick = () => modal.remove();
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.onkeydown = (e) => { if (e.key === 'Escape') modal.remove(); };
+        };
+
         // 获取配置
         async function fetchOptions() {
             try {
-                const res = await fetch(`${BACKEND_BASE_URL}/api/options`);
+                const res = await fetch(`${BACKEND_BASE_URL}/options`);
                 if (res.ok) {
                     appState.globalOptions = await res.json();
+                    console.log('✅ 系统配置与库存加载成功');
                 }
             } catch (e) {
                 console.error('Options Failed', e);
-                toast.error('无法连接到后端服务', '请确保后端已启动在 http://127.0.0.1:5000');
+                toast.error('无法连接到后端服务', `请求失败: ${BACKEND_BASE_URL}/options。请检查后端是否正常启动。`);
             }
         }
 
-        // 提交订单文本 (分步流式/异步流水线模式)
+        function updatePlaceholderOrder(orderId, patch) {
+            appState.orders = appState.orders.map(o =>
+                o.id === orderId ? { ...o, ...patch } : o
+            );
+            scheduleOrderCardRefresh(orderId);
+        }
+
+        function applyParsedOrder(orderId, parsed) {
+            appState.orders = appState.orders.map(o => {
+                if (o.id === orderId) {
+                    return {
+                        ...o,
+                        ...parsed,
+                        loading: false,
+                        error: false,
+                        progressText: '',
+                        progressStep: '',
+                        receiver: parsed.receiver || '未知名字'
+                    };
+                }
+                return o;
+            });
+        }
+
+        async function parseOrderPlain(placeholder) {
+            const resp = await fetch(`${BACKEND_BASE_URL}/parse`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: placeholder.raw }),
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const parsed = await resp.json();
+            applyParsedOrder(placeholder.id, parsed);
+        }
+
+        function handleStreamEvent(placeholder, eventName, payload) {
+            if (eventName === 'progress') {
+                updatePlaceholderOrder(placeholder.id, {
+                    progressText: payload.message || '正在识别...',
+                    progressStep: payload.step || ''
+                });
+                return false;
+            }
+
+            if (eventName === 'done') {
+                applyParsedOrder(placeholder.id, payload);
+                return true;
+            }
+
+            if (eventName === 'error') {
+                throw new Error(payload.message || '流式解析失败');
+            }
+            return false;
+        }
+
+        async function parseOrderWithStream(placeholder) {
+            let streamStarted = false;
+            try {
+                const resp = await fetch(`${BACKEND_BASE_URL}/parse-stream`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: placeholder.raw }),
+                });
+                if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
+
+                streamStarted = true;
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+                let doneReceived = false;
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+
+                    const chunks = buffer.split('\n\n');
+                    buffer = chunks.pop() || '';
+                    for (const chunk of chunks) {
+                        const eventLine = chunk.split('\n').find(line => line.startsWith('event:'));
+                        const dataLine = chunk.split('\n').find(line => line.startsWith('data:'));
+                        if (!dataLine) continue;
+                        const eventName = eventLine ? eventLine.replace(/^event:\s*/, '').trim() : 'message';
+                        const payload = JSON.parse(dataLine.replace(/^data:\s*/, ''));
+                        if (handleStreamEvent(placeholder, eventName, payload)) {
+                            doneReceived = true;
+                        }
+                    }
+                }
+
+                if (!doneReceived) throw new Error('流式解析未返回完成结果');
+            } catch (e) {
+                if (streamStarted) throw e;
+                console.warn('流式解析不可用，自动回退普通解析:', e);
+                updatePlaceholderOrder(placeholder.id, {
+                    progressText: '流式连接失败，切换普通解析...',
+                    progressStep: 'fallback'
+                });
+                await parseOrderPlain(placeholder);
+            }
+        }
+
+        // 提交订单文本 (非阻塞异步模式)
         async function handleSubmitText(text) {
             const rawText = text.trim();
             if (!rawText) return;
 
+            // 1. 立即清空输入框，准备下一单
             appState.inputText = '';
+            syncComposerFromState();
+
 
             let chunks = rawText.split(/\n\s*\n/).map(t => t.trim()).filter(t => t.length > 5);
             if (chunks.length === 0) chunks = [rawText];
 
-            const newOrders = chunks.map(chunk => ({
-                id: Date.now() + Math.random(),
-                raw: chunk,
-                receiver: '等待解析...',
-                products: [],
-                loading: true,
-                error: false,
-                errType: '',
-                phone: '',
-                address: '',
-                total: 0,
-                freight: 0,
-                account: '',
-                salesman: appState.globalOptions.salesmen[0] || '',
-                receipt: appState.globalOptions.receipts[0] || '',
-                express: '',
-                express_reason: '',
-                note: '',
-            }));
+            const newOrders = chunks.map(chunk => {
+                const uniqueId = Date.now() + Math.random();
+                return {
+                    id: uniqueId,
+                    raw: chunk,
+                    receiver: '⏳ 正在拼命识别...',
+                    products: [],
+                    loading: true,
+                    error: false,
+                    errType: '',
+                    phone: '',
+                    address: '',
+                    total: 0,
+                    freight: 0,
+                    account: '',
+                    salesman: appState.globalOptions.salesmen[0] || '',
+                    receipt: appState.globalOptions.receipts[0] || '',
+                    express: '',
+                    note: '',
+                    progressText: '订单已进入解析队列',
+                    progressStep: 'queued',
+                };
+            });
 
-            // 1. 追加占位符
+            // 2. 把占位符按序追加到列表末尾
+            const startIndex = appState.orders.length;
             appState.orders = [...appState.orders, ...newOrders];
-            render();
+            appendNewOrderCards(startIndex, newOrders);
 
-            // 2. 串行流式处理 (逐个解析，获得流水线效果)
-            for (let i = 0; i < newOrders.length; i++) {
-                const placeholder = newOrders[i];
+            // 3. 并发解析每一单
+            newOrders.forEach(async (placeholder, idx) => {
                 try {
-                    const resp = await fetch(`${BACKEND_BASE_URL}/api/parse`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: placeholder.raw }),
-                    });
-
-                    if (resp.ok) {
-                        const parsed = await resp.json();
-                        appState.orders = appState.orders.map(o =>
-                            o.id === placeholder.id ? { ...o, ...parsed, loading: false } : o
-                        );
-                    } else {
-                        throw new Error(`HTTP ${resp.status}`);
-                    }
+                    await parseOrderWithStream(placeholder);
                 } catch (e) {
                     appState.orders = appState.orders.map(o =>
-                        o.id === placeholder.id ? { ...o, error: true, receiver: '解析失败', loading: false, errType: e.message } : o
+                        o.id === placeholder.id ? { ...o, error: true, loading: false, errType: e.message, status: 'error', message: '前端处理异常: ' + e.message } : o
                     );
                 } finally {
-                    render(); // 解析完一个显示一个
+                    scheduleRelatedOrderCardRefresh(placeholder.id);
                 }
-            }
-            toast.success(`解析完成，共 ${chunks.length} 条订单`);
+            });
         }
 
         // 下载Excel
@@ -1178,7 +1839,7 @@
             }
 
             const wb = XLSX.utils.book_new();
-            const orderRows = [['导入编号', '收货人', '手机', '收货地址', '收货人信息(解析)', '应收邮资', '应收合计', '客服备注', '客户账号', '销售渠道名称', '结算方式', '物流公司', '收款账户', '业务员']];
+            const orderRows = [['导入编号', '收货人', '手机', '收货地址', '收货人信息(解析)', '应收邮资', '应收合计', '客服备注', '客户账号', '销售渠道名称', '结算方式', '物流公司', '物流单号', '支付单号', '收款账户', '业务员']];
             const prodRows = [['导入编号(关联订单)', '货品名称', '条码', '货品编号', '规格', '数量', '单价']];
 
             appState.orders.forEach((r, idx) => {
@@ -1189,289 +1850,236 @@
                     r.freight || 0, r.total || 0, r.note || '',
                     r.account || '', r.salesChannel || '仝心科技线下批发',
                     r.payMethod || '欠款计应收', r.express || '',
+                    '', '', // 物流单号, 支付单号 (留空)
                     r.receipt || '', r.salesman || ''
                 ]);
-
-                // 🌟 核心修复：将货品信息添加到货品表中
-                if (r.products && r.products.length > 0) {
-                    r.products.forEach(p => {
-                        prodRows.push([
-                            importId, // 关联订单的编号
-                            p.matchedName || p.searchName,
-                            p.productInfo?.['条码'] || '',
-                            p.productInfo?.['货品编号'] || '',
-                            p.productInfo?.['规格'] || '',
-                            p.qty || 1,
-                            p.price || 0
-                        ]);
-                    });
-                }
+                (r.products || []).forEach(p => {
+                    prodRows.push([
+                        importId,
+                        p.matchedName || p.searchName,
+                        p.productInfo?.['条码'] || p.productInfo?.['货品条码'] || p.barcode || '',
+                        p.productInfo?.['货品编号'] || p.item_no || '',
+                        p.productInfo?.['规格'] || p.spec || '',
+                        p.qty, p.price
+                    ]);
+                });
             });
+
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(orderRows), '订单');
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(prodRows), '货品');
-            XLSX.writeFile(wb, `订单_${Date.now()}.xlsx`);
-        }
-        // --- 🌟 规则实验室逻辑 ---
-        let currentConfig = null;
+            const dataStr = new Date().toLocaleDateString().replace(/\//g, '_');
+            XLSX.writeFile(wb, `订单分表_${dataStr}_共${appState.orders.length}单.xlsx`);
 
-        async function toggleSettings() {
-            const root = document.getElementById('settings-root');
-            if (root.innerHTML) {
-                root.innerHTML = '';
-                return;
-            }
-
-            toast.success('正在加载系统规则...');
-            try {
-                const res = await fetch(`${BACKEND_BASE_URL}/api/config`);
-                currentConfig = await res.json();
-                renderSettings();
-            } catch (e) {
-                toast.error('加载配置失败');
-            }
+            toast.success('订单已下载为Excel文件');
         }
 
-        function renderSettings() {
-            const root = document.getElementById('settings-root');
-            const salesmanOptions = appState.globalOptions.salesmen || [];
-            const receiptOptions = appState.globalOptions.receipts || [];
-            const expressOptions = ['顺丰速运', '圆通（渠道）', '中通（渠道）', '申通快递', '韵达快递', '邮政EMS', '德邦特惠', '极兔渠道（新）', '工厂代发', '工厂直发'];
-
-            root.innerHTML = `
-                <div class="settings-overlay">
-                    <div class="settings-panel" style="position: relative; max-width: 950px; width: 95%;">
-                        <div class="settings-header" style="cursor: grab;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 32px; height: 32px; background: #3b82f6; border-radius: 8px; color: white; display: flex; align-items: center; justify-content: center;">
-                                    ${icons.settings}
-                                </div>
-                                <h2 style="font-size: 18px; font-weight: 700; color: #0f172a;">系统规则实验室 <span style="font-size: 10px; font-weight: normal; color: #94a3b8;">(拖拽标题移动)</span></h2>
-                            </div>
-                            <button onclick="toggleSettings()" style="padding: 8px; border-radius: 50%; border: none; background: transparent; cursor: pointer; color: #64748b;">
-                                ${icons.x}
-                            </button>
-                        </div>
-                        <div class="settings-body custom-scrollbar" style="padding: 20px;">
-                            
-                            <!-- 1. 业务员简写映射 -->
-                            <div class="config-section">
-                                <div class="config-title">👤 业务员代码映射 (识别订单尾部的代码)</div>
-                                <div id="salesman-map-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                                    ${Object.entries(currentConfig['业务员映射'] || {}).map(([code, target]) => `
-                                        <div class="rule-card" style="padding: 8px 12px; display: flex; align-items: center; gap: 8px; background: white;">
-                                            <span style="width: 40px; font-weight: 800; color: #3b82f6; font-size: 14px;">${code}</span>
-                                            <select onchange="updateConfig('业务员映射.${code}', this.value)" style="flex: 1; min-width: 0; padding: 4px; font-size: 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
-                                                <option value="">-- 选择业务员 --</option>
-                                                ${salesmanOptions.map(s => `<option value="${s}" ${s === target ? 'selected' : ''}>${s}</option>`).join('')}
-                                            </select>
-                                            <button onclick="deleteConfigKey('业务员映射', '${code}')" style="color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px;">${icons.trashSmall}</button>
-                                        </div>
-                                    `).join('')}
-                                    <div class="rule-card" style="border: 1px dashed #3b82f6; padding: 8px 12px;">
-                                        <input type="text" id="new-sales-code" placeholder="新代码" style="width: 60px; font-size: 12px; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 4px;" />
-                                        <button onclick="addNewMap('业务员映射', 'new-sales-code', '')" style="color: #3b82f6; font-weight: bold; font-size: 12px; margin-left: 10px; background: none; border: none; cursor: pointer;">+ 新增</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 2. 快递分拣规则 -->
-                            <div class="config-section">
-                                <div class="config-title">🚚 快递分拣规则 (机型 + 重量 + 地区)</div>
-                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 11px; color: #475569; display: grid; grid-template-columns: 60px 1fr 1fr 1fr 1fr; gap: 8px; text-align: center; font-weight: bold;">
-                                    <span>省份</span>
-                                    <span>1-2kg档</span>
-                                    <span>2-5kg档</span>
-                                    <span>5kg+档</span>
-                                    <span style="color: #3b82f6;">收银机</span>
-                                </div>
-                                <div id="express-rules-container" style="display: flex; flex-direction: column; gap: 6px;">
-                                    ${["江苏", "浙江", "安徽", "上海", "北京", "福建", "广东", "河北", "河南", "湖南", "天津", "湖北", "山东", "山西", "广西", "新疆", "内蒙古", "云南", "贵州", "四川", "宁夏", "吉林", "辽宁", "黑龙江", "海南"].map(prov => {
-                                        const pRules = currentConfig['快递规则']?.['打印机'] || {};
-                                        const rRules = currentConfig['快递规则']?.['收银机']?.['地区映射'] || {};
-                                        
-                                        const renderExpSelect = (cat, sub, p) => {
-                                            const val = cat === '打印机' ? pRules[sub]?.[p] : rRules[p];
-                                            const path = cat === '打印机' ? `快递规则.打印机.${sub}.${p}` : `快递规则.收银机.地区映射.${p}`;
-                                            return `
-                                                <select onchange="updateConfig('${path}', this.value)" style="font-size: 10px; padding: 2px; border-radius: 4px; border: 1px solid #e2e8f0; width: 100%;">
-                                                    <option value="">--</option>
-                                                    ${expressOptions.map(e => `<option value="${e}" ${e === val ? 'selected' : ''}>${e}</option>`).join('')}
-                                                </select>
-                                            `;
-                                        };
-                                        
-                                        return `
-                                            <div class="rule-card" style="display: grid; grid-template-columns: 60px 1fr 1fr 1fr 1fr; gap: 8px; padding: 4px 10px; background: white; border: 1px solid #f1f5f9;">
-                                                <span style="font-weight: 700; font-size: 13px; color: #334155;">${prov}</span>
-                                                ${renderExpSelect('打印机', '1.01-2kg', prov)}
-                                                ${renderExpSelect('打印机', '2kg-5kg', prov)}
-                                                ${renderExpSelect('打印机', '5kg以上', prov)}
-                                                ${renderExpSelect('收银机', '', prov)}
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                            
-                            <!-- 3. 收款账户映射 -->
-                            <div class="config-section">
-                                <div class="config-title">💳 付款关键词映射 (识别订单中的支付备注)</div>
-                                <div id="receipt-rules-container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-                                    ${Object.entries(currentConfig['收款账户映射'] || {}).map(([key, val]) => `
-                                        <div class="rule-card" style="padding: 8px 12px; display: flex; align-items: center; gap: 10px; background: white;">
-                                            <input type="text" value="${key}" style="width: 120px; background: #f8fafc; font-weight: bold; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px; padding: 2px 6px;" onchange="renameConfigKey('收款账户映射', '${key}', this.value)" />
-                                            <span style="color: #94a3b8;">→</span>
-                                            <select onchange="updateConfig('收款账户映射.${key}', this.value)" style="flex: 1; min-width: 0; padding: 4px; font-size: 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
-                                                <option value="">-- 选择收款账户 --</option>
-                                                ${receiptOptions.map(r => `<option value="${r}" ${r === val ? 'selected' : ''}>${r}</option>`).join('')}
-                                            </select>
-                                            <button onclick="deleteConfigKey('收款账户映射', '${key}')" style="color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px;">${icons.trashSmall}</button>
-                                        </div>
-                                    `).join('')}
-                                    <div class="rule-card" style="border: 1px dashed #3b82f6; padding: 8px 12px;">
-                                        <input type="text" id="new-receipt-key" placeholder="如:已付成" style="width: 100px; font-size: 12px; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 4px;" />
-                                        <button onclick="addNewMap('收款账户映射', 'new-receipt-key', '')" style="color: #3b82f6; font-weight: bold; font-size: 12px; margin-left: 10px; background: none; border: none; cursor: pointer;">+ 新增关键词</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 4. 货品记忆纠错 -->
-                            <div class="config-section">
-                                <div class="config-title">🧠 货品记忆纠错 (手动修正历史)</div>
-                                <div id="special-map-container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-                                    ${Object.entries(currentConfig['货品特殊映射'] || {}).map(([key, val]) => `
-                                        <div class="rule-card" style="padding: 8px 12px; display: flex; align-items: center; gap: 8px; background: white;">
-                                            <span style="font-size: 11px; color: #64748b; width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${key}">${key}</span>
-                                            <span style="color: #94a3b8;">→</span>
-                                            <select onchange="updateConfig('货品特殊映射.${key}', this.value)" style="flex: 1; min-width: 0; padding: 4px; font-size: 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
-                                                <option value="">-- 选择标准型号 --</option>
-                                                <option value="${val}" selected>${val}</option>
-                                                ${appState.globalOptions.allProducts.slice(0, 300).map(pn => `<option value="${pn}">${pn}</option>`).join('')}
-                                            </select>
-                                            <button onclick="deleteConfigKey('货品特殊映射', '${key}')" style="color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px;">${icons.trashSmall}</button>
-                                        </div>
-                                    `).slice(0, 60).join('')}
-                                </div>
-                            </div>
-
-                            <!-- 5. 客户账号映射 -->
-                            <div class="config-section">
-                                <div class="config-title">👥 客户账号映射 (手动关联记录)</div>
-                                <div id="customer-map-container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-                                    ${Object.entries(currentConfig['客户特殊映射'] || {}).map(([key, val]) => `
-                                        <div class="rule-card" style="padding: 8px 12px; display: flex; align-items: center; gap: 8px; background: white;">
-                                            <span style="font-size: 11px; color: #64748b; width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${key}">${key}</span>
-                                            <span style="color: #94a3b8;">→</span>
-                                            <select onchange="updateConfig('客户特殊映射.${key}', this.value)" style="flex: 1; min-width: 0; padding: 4px; font-size: 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
-                                                <option value="">-- 选择正式账号 --</option>
-                                                <option value="${val}" selected>${val}</option>
-                                                ${(appState.globalOptions.customers || []).slice(0, 200).map(c => `<option value="${c.客户账号}">${c.客户名称} (${c.客户账号})</option>`).join('')}
-                                            </select>
-                                            <button onclick="deleteConfigKey('客户特殊映射', '${key}')" style="color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px;">${icons.trashSmall}</button>
-                                        </div>
-                                    `).slice(0, 60).join('')}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="settings-footer">
-                            <button onclick="toggleSettings()" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; font-weight: 600; cursor: pointer;">取消</button>
-                            <button onclick="saveConfig()" style="padding: 10px 24px; border-radius: 8px; border: none; background: #3b82f6; color: white; font-weight: 700; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5);">保存所有规则</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            const panel = root.querySelector('.settings-panel');
-            const header = root.querySelector('.settings-header');
-            makeDraggable(header, panel);
-
-            // 辅助功能
-            window.addNewMap = (section, inputId, defaultVal) => {
-                const key = document.getElementById(inputId).value.trim();
-                if(!key) return toast.error('请输入代码或关键词');
-                if(!currentConfig[section]) currentConfig[section] = {};
-                currentConfig[section][key] = defaultVal;
-                renderSettings();
-            };
-            
-            window.renameConfigKey = (section, oldKey, newKey) => {
-                if(oldKey === newKey) return;
-                const val = currentConfig[section][oldKey];
-                delete currentConfig[section][oldKey];
-                currentConfig[section][newKey] = val;
-                renderSettings();
-            };
-        }
-
-        function updateConfig(path, value) {
-            const keys = path.split('.');
-            let current = currentConfig;
-            for (let i = 0; i < keys.length - 1; i++) {
-                current = current[keys[i]];
-            }
-            current[keys[keys.length - 1]] = value;
-        }
-
-        function deleteConfigKey(section, key) {
-            delete currentConfig[section][key];
-            renderSettings();
-        }
-
-        async function saveConfig() {
-            try {
-                const res = await fetch(`${BACKEND_BASE_URL}/api/config`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(currentConfig)
-                });
-                if (res.ok) {
-                    toast.success('配置已生效！');
-                    toggleSettings();
-                    fetchOptions();
+        // 清空所有订单
+        function clearAllOrders() {
+            showConfirmDialog(
+                '确认清空所有订单？',
+                '此操作将删除所有已识别的订单，且无法撤销。请确保已下载重要数据。',
+                () => {
+                    appState.orders = [];
+                    renderKeepScroll();
+                    toast.success('已清空所有订单');
                 }
-            } catch (e) {
-                toast.error('保存失败');
+            );
+        }
+
+        function getOrdersScrollSnapshot() {
+            const scroller = document.getElementById('orders-scroll');
+            if (!scroller) return null;
+            return {
+                top: scroller.scrollTop,
+                left: scroller.scrollLeft
+            };
+        }
+
+        function restoreOrdersScrollSnapshot(snapshot) {
+            if (!snapshot) return;
+            requestAnimationFrame(() => {
+                const scroller = document.getElementById('orders-scroll');
+                if (!scroller) return;
+                scroller.scrollTop = snapshot.top;
+                scroller.scrollLeft = snapshot.left;
+            });
+        }
+
+        function renderKeepScroll() {
+            const snapshot = getOrdersScrollSnapshot();
+            render();
+            restoreOrdersScrollSnapshot(snapshot);
+        }
+
+        function scrollOrdersToBottom() {
+            requestAnimationFrame(() => {
+                const scroller = document.getElementById('orders-scroll');
+                if (!scroller) return;
+                scroller.scrollTop = scroller.scrollHeight;
+            });
+        }
+
+        function renderScrollBottom() {
+            render();
+            scrollOrdersToBottom();
+        }
+
+        function updateHeaderSummary() {
+            const label = document.getElementById('order-count-label');
+            if (!label) return;
+            label.textContent = appState.orders.length > 0 ? `${appState.orders.length} 个订单` : 'rules-engine / exact-match';
+        }
+
+        function syncComposerFromState() {
+            const textarea = document.getElementById('input-textarea');
+            const submitBtn = document.getElementById('submit-btn');
+            if (textarea) {
+                textarea.value = appState.inputText;
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(textarea.scrollHeight || 44, 200) + 'px';
+            }
+            if (submitBtn) {
+                submitBtn.disabled = !appState.inputText.trim() || appState.isProcessing;
             }
         }
 
-        // 渲染应用
-        function render() {
-            const root = document.getElementById('root');
-            root.innerHTML = '';
-
-            // 查重逻辑
+        function getPhoneCounts() {
             const phoneCounts = {};
             appState.orders.forEach(o => {
                 const p = String(o.phone || '').trim();
                 if (p) phoneCounts[p] = (phoneCounts[p] || 0) + 1;
             });
+            return phoneCounts;
+        }
+
+        function replaceOrderCard(orderId) {
+            const grid = document.getElementById('orders-grid');
+            if (!grid) {
+                renderKeepScroll();
+                return;
+            }
+
+            const index = appState.orders.findIndex(o => String(o.id) === String(orderId));
+            if (index < 0) return;
+
+            const order = appState.orders[index];
+            const phoneCounts = getPhoneCounts();
+            const isDuplicate = order.phone && phoneCounts[String(order.phone).trim()] > 1;
+            const nextCard = OrderCard(order, index, appState.globalOptions, updateOrder, confirmDeleteOrder, isDuplicate, false);
+            const oldCard = grid.querySelector(`[data-order-id="${String(orderId)}"]`);
+
+            if (oldCard) {
+                oldCard.replaceWith(nextCard);
+            } else {
+                grid.appendChild(nextCard);
+            }
+
+            nextCard.querySelectorAll('.note-textarea').forEach(autoResizeNote);
+        }
+
+        let pendingOrderCardIds = new Set();
+        let pendingCardFrame = null;
+        function scheduleOrderCardRefresh(orderId) {
+            pendingOrderCardIds.add(orderId);
+            if (pendingCardFrame) return;
+            pendingCardFrame = requestAnimationFrame(() => {
+                const ids = Array.from(pendingOrderCardIds);
+                pendingOrderCardIds.clear();
+                pendingCardFrame = null;
+                ids.forEach(replaceOrderCard);
+            });
+        }
+
+        function scheduleRelatedOrderCardRefresh(orderId) {
+            const order = appState.orders.find(o => String(o.id) === String(orderId));
+            const phone = String(order?.phone || '').trim();
+            if (!phone) {
+                scheduleOrderCardRefresh(orderId);
+                return;
+            }
+            appState.orders
+                .filter(o => String(o.phone || '').trim() === phone)
+                .forEach(o => scheduleOrderCardRefresh(o.id));
+        }
+
+        function appendNewOrderCards(startIndex, newOrders) {
+            const grid = document.getElementById('orders-grid');
+            if (!grid) {
+                renderScrollBottom();
+                return;
+            }
+            const phoneCounts = getPhoneCounts();
+            newOrders.forEach((order, offset) => {
+                const isDuplicate = order.phone && phoneCounts[String(order.phone).trim()] > 1;
+                grid.appendChild(OrderCard(order, startIndex + offset, appState.globalOptions, updateOrder, confirmDeleteOrder, isDuplicate, true));
+            });
+            updateHeaderSummary();
+            scrollOrdersToBottom();
+        }
+
+        function getOrderIdFromDropdownKey(key) {
+            const match = String(key || '').match(/^order-(.+?)-/);
+            return match ? match[1] : '';
+        }
+
+        function refreshDropdownCards(...keys) {
+            const ids = new Set(keys.map(getOrderIdFromDropdownKey).filter(Boolean));
+            if (!ids.size) {
+                renderKeepScroll();
+                return;
+            }
+            ids.forEach(id => scheduleOrderCardRefresh(id));
+        }
+
+        function refreshOrderAfterFieldChange(orderId, field, oldPhone = '') {
+            if (field === 'phone') {
+                const ids = new Set([String(orderId)]);
+                const nextOrder = appState.orders.find(o => String(o.id) === String(orderId));
+                const newPhone = String(nextOrder?.phone || '').trim();
+                appState.orders.forEach(o => {
+                    const phone = String(o.phone || '').trim();
+                    if ((oldPhone && phone === oldPhone) || (newPhone && phone === newPhone)) {
+                        ids.add(String(o.id));
+                    }
+                });
+                ids.forEach(id => scheduleOrderCardRefresh(id));
+                return;
+            }
+            scheduleOrderCardRefresh(orderId);
+        }
+
+        // 渲染应用
+        function render() {
+            document.documentElement.setAttribute('data-theme', appState.theme || 'dark');
+            const root = document.getElementById('root');
+            root.innerHTML = '';
+            root.className = 'cc-shell';
+
+            // 查重逻辑
+            const phoneCounts = getPhoneCounts();
 
             // Header
             const header = document.createElement('header');
-            header.className = 'border-b border-gray-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50';
+            header.className = 'cc-header sticky top-0 z-50';
             header.innerHTML = `
                 <div class="px-4 h-14 flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white">
-                            ${icons.sparkles}
-                        </div>
+                        <div class="cc-logo">✦</div>
                         <div>
-                            <h1 class="text-sm font-semibold text-gray-900">订单助手 AI版</h1>
-                            ${appState.orders.length > 0 ? `<p class="text-xs text-gray-500">${appState.orders.length} 个订单</p>` : ''}
+                            <h1 class="cc-title text-sm font-semibold">订单助手</h1>
+                            <p id="order-count-label" class="cc-subtitle text-xs">${appState.orders.length > 0 ? `${appState.orders.length} 个订单` : 'rules-engine / exact-match'}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick="toggleSettings()" class="h-8 w-8 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all" title="规则实验室">
-                            ${icons.settings}
+                        <button onclick="toggleTheme()" class="cc-chip text-sm" title="切换日夜模式">
+                            ${appState.theme === 'dark' ? '夜间模式' : '白天模式'}
                         </button>
                         ${appState.orders.length > 0 ? `
-                            <button onclick="clearAllOrders()" class="h-8 px-3 text-sm border border-gray-200 rounded bg-gray-50 hover:bg-gray-100 flex items-center gap-1.5">
-                                ${icons.trash}
-                                清空
+                            <button onclick="clearAllOrders()" class="cc-chip cc-chip-danger text-sm">
+                                清空列表
                             </button>
-                            <button onclick="exportToExcel()" class="h-8 px-3 text-sm rounded text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 flex items-center gap-1.5">
-                                ${icons.download}
-                                下载
+                            <button onclick="exportToExcel()" class="cc-chip cc-chip-primary text-sm">
+                                下载表格
                             </button>
                         ` : ''}
                     </div>
@@ -1480,6 +2088,7 @@
 
             // Content
             const content = document.createElement('div');
+            content.id = 'orders-scroll';
             content.className = 'flex-1 overflow-y-auto';
             content.style.height = 'calc(100vh - 56px - 120px)';
 
@@ -1490,6 +2099,7 @@
                 contentInner.appendChild(WelcomeScreen());
             } else {
                 const grid = document.createElement('div');
+                grid.id = 'orders-grid';
                 grid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-4';
                 appState.orders.forEach((order, index) => {
                     const isDuplicate = order.phone && phoneCounts[String(order.phone).trim()] > 1;
@@ -1502,15 +2112,15 @@
 
             // Input
             const inputSection = document.createElement('div');
-            inputSection.className = 'border-t border-gray-200 bg-white sticky bottom-0';
+            inputSection.className = 'cc-input-area sticky bottom-0';
             inputSection.innerHTML = `
                 <div class="max-w-7xl mx-auto px-4 py-4">
-                    <div class="flex items-center gap-3">
+                    <div class="cc-composer flex items-center gap-3 p-2">
                         <div class="flex-1 relative">
                             <textarea
                                 id="input-textarea"
                                 placeholder="粘贴订单文本，自动识别..."
-                                class="w-full min-h-[52px] max-h-[200px] resize-none rounded-2xl border border-gray-300 px-4 py-[15px] text-[15px] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                class="w-full min-h-[44px] max-h-[200px] resize-none border-0 px-3 py-[11px] text-[14px] focus:outline-none"
                                 ${appState.isProcessing ? 'disabled' : ''}
                                 rows="1"
                             >${appState.inputText}</textarea>
@@ -1518,9 +2128,9 @@
                         <button
                             id="submit-btn"
                             ${!appState.inputText.trim() || appState.isProcessing ? 'disabled' : ''}
-                            class="h-[52px] w-[52px] rounded-full flex items-center justify-center text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="cc-send h-[42px] px-4 min-w-[62px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            ${appState.isProcessing ? '<div class="loader" style="width: 20px; height: 20px; border-width: 2px;"></div>' : icons.send}
+                            ${appState.isProcessing ? '<div class="loader" style="width: 18px; height: 18px;"></div>' : '发送 ↵'}
                         </button>
                     </div>
                     <p class="text-xs text-gray-400 mt-2 text-center">
@@ -1566,9 +2176,32 @@
                     handleSubmitText(appState.inputText);
                 }
             });
+
+            document.querySelectorAll('.note-textarea').forEach(autoResizeNote);
         }
 
         // 初始化
+        let mouseFrame = null;
+        let latestMouseEvent = null;
+        document.addEventListener('pointermove', (e) => {
+            latestMouseEvent = e;
+            if (mouseFrame) return;
+            mouseFrame = requestAnimationFrame(() => {
+                if (latestMouseEvent) {
+                    document.body.style.setProperty('--mouse-x', `${latestMouseEvent.clientX}px`);
+                    document.body.style.setProperty('--mouse-y', `${latestMouseEvent.clientY}px`);
+                }
+                mouseFrame = null;
+            });
+        });
+
+        document.addEventListener('click', () => {
+            if (appState.openDropdown) {
+                const previousKey = appState.openDropdown;
+                appState.openDropdown = '';
+                refreshDropdownCards(previousKey);
+            }
+        });
         fetchOptions();
         render();
     </script>

@@ -1,5 +1,8 @@
+zhipuai
 Flask
 pandas
 openpyxl
 requests
 flask-cors
+fuzzywuzzy
+python-Levenshtein
