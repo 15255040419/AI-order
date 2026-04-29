@@ -17,6 +17,9 @@ def select_express(products, province, address_text, raw_text, express_table, co
 
     # 1. 检查用户手动指定
     manual_keywords = {
+        "顺丰现付": "顺丰现付（渠道）",
+        "顺丰寄付": "顺丰现付（渠道）",
+        "顺丰到付": "顺丰到付（渠道）",
         "顺丰": "顺丰现付（渠道）", 
         "圆通": "圆通（渠道）", 
         "中通": "中通（渠道）",
@@ -26,7 +29,7 @@ def select_express(products, province, address_text, raw_text, express_table, co
     }
     
     for kw, target in manual_keywords.items():
-        pattern = rf"(?:发|走|指定|要|送|快递|备注)[:：\s]*{kw}"
+        pattern = rf"(?:发|走|指定|要|送|快递|物流|发货|备注)[:：\s]*{kw}|{kw}"
         if re.search(pattern, text_to_check):
             return target, f"[用户手动指定] -> {target}"
 

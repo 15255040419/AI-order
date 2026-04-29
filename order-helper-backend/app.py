@@ -25,8 +25,40 @@ app = Flask(__name__)
 CORS(app)
 
 data_loader = DataLoader()
-ZHIPU_API_KEY = "7bd6e3eca730448c8ffac4c786cd092a.XfOv2YlnrDp44XO5"
-ai_parser = OrderAIParser(ZHIPU_API_KEY)
+
+# AI 配置（支持运行时热切换）
+AI_CONFIG = {
+    "provider": "zhipu",      # zhipu | qianwen | doubao
+    "model": "glm-4-flash",
+    "api_key": "7bd6e3eca730448c8ffac4c786cd092a.XfOv2YlnrDp44XO5"
+}
+ai_parser = OrderAIParser(AI_CONFIG["api_key"])
+
+# AI 提供商可选列表（供前端展示）
+AI_PROVIDERS = [
+    {"id": "zhipu",    "name": "智谱 GLM",     "models": ["glm-4-flash", "glm-4", "glm-3-turbo"]},
+    {"id": "qianwen",  "name": "阿里千问",     "models": ["qwen-turbo", "qwen-plus", "qwen-max"]},
+    {"id": "doubao",   "name": "字节豆包",     "models": ["doubao-lite-4k", "doubao-pro-4k"]},
+]
+
+@app.route('/api/ai-config', methods=['GET'])
+def get_ai_config():
+    return jsonify({
+        "current": AI_CONFIG,
+        "providers": AI_PROVIDERS
+    })
+
+@app.route('/api/ai-config', methods=['POST'])
+def set_ai_config():
+    global ai_parser, AI_CONFIG
+    data = request.get_json(force=True) or {}
+    provider = data.get('provider', AI_CONFIG['provider'])
+    model    = data.get('model',    AI_CONFIG['model'])
+    api_key  = data.get('api_key',  AI_CONFIG['api_key'])
+    AI_CONFIG = {'provider': provider, 'model': model, 'api_key': api_key}
+    ai_parser = OrderAIParser(api_key, provider=provider, model=model)
+    logger.info(f'🔄 AI 引擎已切换: {provider} / {model}')
+    return jsonify({'ok': True, 'config': AI_CONFIG})
 
 def get_candidate_products(text, data_loader, limit=50):
     """动态筛选候选货品，提供给 AI 作为参考锚点（使用归一化避免错失）"""
@@ -60,8 +92,8 @@ def get_candidate_products(text, data_loader, limit=50):
             unique_candidates.append(c)
             seen.add(c)
             
-    # 提取所有已知货品作为大底库（截取一定量，供 AI 兜底）
-    fallback = [str(x) for x in data_loader.all_products[:2000] if str(x) not in seen]
+    # 提取所有已知货品作为大底库（截取小部分，供 AI 兜底，避免过长导致智谱 API 变慢）
+    fallback = [str(x) for x in data_loader.all_products[:50] if str(x) not in seen]
     return unique_candidates[:limit] + fallback
 
 def local_pre_parse(text, data_loader):
@@ -101,8 +133,17 @@ def local_pre_parse(text, data_loader):
         return "".join(parts)
 
     # 2. 扫描货品 (完全匹配规格编号)
-    text_upper = text.upper()
-    normalized_text = normalize_key(text)
+    # 【关键】对商品的扫描必须限制在「备注：」之前，备注内容只进客服备注字段
+    note_match = re.search(r'备注：|备注:', text)
+    if note_match:
+        product_scan_text = text[:note_match.start()]
+        found["note"] = text[note_match.end():].strip()
+    else:
+        product_scan_text = text
+        found["note"] = ""
+
+    text_upper = product_scan_text.upper()
+    normalized_text = normalize_key(product_scan_text)
     seen_products = set()
     for item_no, info in data_loader.item_no_index.items():
         item_no_text = str(item_no).strip()
@@ -137,13 +178,13 @@ def local_pre_parse(text, data_loader):
         prod_name = str(prod_name).strip()
         if not prod_name or prod_name == 'nan' or prod_name in seen_products:
             continue
-        start = text.find(prod_name)
+        start = product_scan_text.find(prod_name)
         if start < 0:
             continue
         end = start + len(prod_name)
         if any(not (end <= s or start >= e) for s, e in occupied_spans):
             continue
-        suffix = text[end:end + 12]
+        suffix = product_scan_text[end:end + 12]
         qty = 1
         qty_match = re.search(r'^\s*(?:[*xX×]\s*)?(\d+)\s*(?:台|个|卷|套|箱|包|张|件)?', suffix)
         if qty_match:
@@ -259,7 +300,7 @@ def local_payment_check(text, config):
 def infer_unit_price(raw_text, product_text, qty):
     """
     Infer unit price from deterministic price formulas in the original order.
-    Examples: 90*2=180元, 95 * 3 = 285, 3*95=285元.
+    Examples: 90*2=180元, 95 * 3 = 285, 3*95=285元, 80*60纸 10元.
     """
     if not raw_text:
         return 0
@@ -274,12 +315,13 @@ def infer_unit_price(raw_text, product_text, qty):
     if product_text:
         idx = normalized.find(str(product_text))
         if idx >= 0:
-            windows.append(normalized[idx:idx + len(str(product_text)) + 80])
-    windows.append(normalized)
+            windows.append(normalized[max(0, idx - 40):idx + len(str(product_text)) + 80])
+    if not windows:
+        windows.append(normalized)
 
     patterns = [
-        re.compile(r'(\d+(?:\.\d+)?)\s*\*\s*(\d+)\s*=?\s*(\d+(?:\.\d+)?)?\s*元?'),
-        re.compile(r'(\d+)\s*\*\s*(\d+(?:\.\d+)?)\s*=?\s*(\d+(?:\.\d+)?)?\s*元?'),
+        re.compile(r'(?<![a-zA-Z0-9_\-])(\d+(?:\.\d+)?)\s*\*\s*(\d+)\s*=?\s*(\d+(?:\.\d+)?)?\s*元?'),
+        re.compile(r'(?<![a-zA-Z0-9_\-])(\d+)\s*\*\s*(\d+(?:\.\d+)?)\s*=?\s*(\d+(?:\.\d+)?)?\s*元?'),
     ]
 
     for window in windows:
@@ -303,6 +345,23 @@ def infer_unit_price(raw_text, product_text, qty):
             for unit_price in candidates:
                 if total_val is None or abs(unit_price * qty - total_val) < 0.01:
                     return unit_price
+
+    # 增强兜底价格提取：提取类似 "80*60纸 10元" 或 "80*60纸-10" 的简单格式
+    if product_text:
+        product_str = str(product_text).strip()
+        if product_str:
+            escaped = re.escape(product_str)
+            # 模式1: 货品名称 后接可选的数量 再接标点/空格 再接价格及元/块
+            m = re.search(rf'{escaped}\s*(?:[*xX×]\s*\d+\s*)?(?:[-:：=,，]*)\s*(\d+(?:\.\d+)?)\s*[元块]', raw_text)
+            if m:
+                try: return round(float(m.group(1)) / qty, 2)
+                except: pass
+            
+            # 模式2: 货品名称 后接破折号/等号 再接纯数字
+            m2 = re.search(rf'{escaped}\s*(?:[*xX×]\s*\d+\s*)?(?:[-:：=]+)\s*(\d+(?:\.\d+)?)(?!\d)', raw_text)
+            if m2:
+                try: return round(float(m2.group(1)) / qty, 2)
+                except: pass
 
     return 0
 
@@ -396,7 +455,9 @@ def infer_price_plan(raw_text, products):
         freight_indices = []
         prefix = normalized[max(0, match.start() - 180):match.start()]
         if freight_keywords.search(prefix):
-            segments = [seg.strip() for seg in prefix.split("+") if seg.strip()]
+            # 移除括号内的内容以防止括号内的 + 号干扰切割
+            clean_prefix = re.sub(r'[\(（][^\)）]*[\)）]', '', prefix)
+            segments = [seg.strip() for seg in clean_prefix.split("+") if seg.strip()]
             if len(segments) == len(terms):
                 freight_indices = [i for i, seg in enumerate(segments) if freight_keywords.search(seg)]
 
@@ -406,9 +467,7 @@ def infer_price_plan(raw_text, products):
         product_terms = [term for i, term in enumerate(terms) if i not in freight_indices]
         freight_terms = [term for i, term in enumerate(terms) if i in freight_indices]
 
-        if len(product_terms) < len(products):
-            continue
-
+        # 允许产品数量大于价格数量（例如末尾有赠品），不再 continue，而是按序匹配已有的价格
         prices = []
         valid = True
         for term, product in zip(product_terms, products):
@@ -450,6 +509,25 @@ def infer_price_plan(raw_text, products):
     additive_prices = infer_additive_prices(raw_text, products)
     if additive_prices:
         result["prices"] = additive_prices
+        return result
+
+    # 【兜底3】单件货品 + 原文直写金额（如 "880元"），无加法公式
+    if len(products) == 1:
+        # 去掉货品名称内的纯数字干扰，只在货品名称之后的部分搜索
+        single_amount = re.search(
+            r'(?<![a-zA-Z0-9\-])(\d{2,6}(?:\.\d{1,2})?)\s*元',
+            raw_text
+        )
+        if single_amount:
+            try:
+                qty = int(products[0].get("qty", 1) or 1)
+                total = float(single_amount.group(1))
+                result["prices"] = [round(total / qty, 2)]
+                logger.debug(f"[价格] 单品直写金额兜底: {total}元 / qty={qty} => 单价={result['prices'][0]}")
+                return result
+            except:
+                pass
+
     return result
 
 def _progress(progress, step, message, **extra):
@@ -531,16 +609,56 @@ def process_order_text(raw_text, progress=None):
 
     # [补全引擎] 4. 货品详情严格对齐
     _progress(progress, "price_plan", "拆分价格与补运费")
+    
+    # 【修复】提取并剥离 AI 可能误识别为货品的“运费”
+    ai_products_raw = ai_res.get('products', [])
+    ai_products = []
+    ai_freight_from_products = 0.0
+    freight_pattern = re.compile(r'(?:补\s*)?运费|邮费|快递费|运费补差')
+    
+    # 【规则】备注区货品过滤：备注:之后的文字不算货品，只进客服备注
+    _note_m = re.search('备注：|备注:', raw_text)
+    _note_text   = normalize_key(raw_text[_note_m.start():]) if _note_m else ""
+    _prod_text   = normalize_key(raw_text[:_note_m.start()]) if _note_m else normalize_key(raw_text)
+
+    for p in ai_products_raw:
+        name = str(p.get('raw_name') or p.get('name') or '')
+        if freight_pattern.search(name):
+            try: ai_freight_from_products += float(p.get('price', 0)) * float(p.get('qty', 1) or 1)
+            except: pass
+            continue
+        # 备注区专属货品过滤
+        name_norm = normalize_key(name)
+        if _note_text and name_norm and name_norm in _note_text and name_norm not in _prod_text:
+            logger.info(f"[过滤] '{name}' 仅出现在备注区，已排除出货品列表")
+            continue
+        ai_products.append(p)
+
+
     # 合并 AI 提取的货品和本地预扫描发现的货品，确保万无一失
-    ai_products = ai_res.get('products', [])
-    local_prods = local_info.get("products", [])
+    local_prods_raw = local_info.get("products", [])
+    local_prods = []
+    for lp in local_prods_raw:
+        lp_name = str(lp.get("searchName") or lp.get("name") or lp.get("raw_name") or "")
+        if not freight_pattern.search(lp_name):
+            local_prods.append(lp)
     
     for lp in local_prods:
         lp_name = normalize_key(lp.get("raw_name", ""))
         already_has = False
-        for ap in ai_products:
+        for i, ap in enumerate(ai_products):
             ap_name = normalize_key(ap.get("raw_name", "") or ap.get("name", ""))
-            if lp_name == ap_name or lp_name in ap_name or ap_name in lp_name:
+            if lp_name == ap_name:
+                # 完全一致，无需处理
+                already_has = True
+                break
+            elif ap_name in lp_name and len(lp_name) > len(ap_name):
+                # 本地名称更完整（如 "K7白单(...)ME" vs AI的 "K7白单(...)"），用本地替换 AI 版
+                ai_products[i] = lp
+                already_has = True
+                break
+            elif lp_name in ap_name:
+                # AI 名称更长，AI 版已覆盖，无需追加
                 already_has = True
                 break
         if not already_has:
@@ -550,6 +668,9 @@ def process_order_text(raw_text, progress=None):
         ai_products = local_prods
         
     price_plan = infer_price_plan(raw_text, ai_products)
+    if ai_freight_from_products > 0 and price_plan.get("freight", 0) == 0:
+        price_plan["freight"] = ai_freight_from_products
+    logger.info(f"[价格计划] 共{len(ai_products)}件货品 | 解析出价格{len(price_plan.get('prices',[]))}个: {price_plan.get('prices',[])} | 运费: {price_plan.get('freight',0)}")
     debug_trace["steps"].append({
         "name": "price_plan",
         "prices": price_plan.get("prices", []),
@@ -564,7 +685,19 @@ def process_order_text(raw_text, progress=None):
         details = match_result.get('details') or get_product_details(matched, data_loader)
         status = match_result.get('status', 'unmatched')
         qty = p.get('qty', 1)
-        price = p.get('price', 0) or (price_plan["prices"][idx] if idx < len(price_plan["prices"]) else 0) or infer_unit_price(raw_text, search_name, qty)
+        
+        price_from_plan = price_plan["prices"][idx] if idx < len(price_plan.get("prices", [])) else None
+        
+        if price_from_plan is not None:
+            price = price_from_plan
+            price_source = f"公式对齐[{idx}]={price}"
+        elif p.get('price'):
+            price = p.get('price')
+            price_source = f"AI返回价格={price}"
+        else:
+            price = infer_unit_price(raw_text, search_name, qty)
+            price_source = f"兜底盲猜={price}"
+        logger.info(f"[货品{idx+1}] 原文:'{search_name}' | 匹配:{matched or '❌待确认'} ({match_result.get('matchType','')}) | 价格来源:{price_source}")
         processed_products.append({
             "searchName": search_name,
             "matchedName": matched or "",

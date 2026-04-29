@@ -2062,8 +2062,14 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick="toggleTheme()" class="cc-chip text-sm" title="切换日夜模式">
-                            ${appState.theme === 'dark' ? '夜间模式' : '白天模式'}
+                        <button onclick="openAiSettings()" class="cc-chip" title="AI 引擎设置" style="width:34px;height:34px;padding:0;justify-content:center;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        </button>
+                        <button onclick="toggleTheme()" class="cc-chip" title="${appState.theme === 'dark' ? '切换为白天模式' : '切换为夜间模式'}" style="width:34px;height:34px;padding:0;justify-content:center;">
+                            ${appState.theme === 'dark'
+                                ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
+                                : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`
+                            }
                         </button>
                         ${appState.orders.length > 0 ? `
                             <button onclick="clearAllOrders()" class="cc-chip cc-chip-danger text-sm">
@@ -2193,7 +2199,105 @@
                 refreshDropdownCards(previousKey);
             }
         });
+
+        // ==== AI 设置面板 ====
+        let _aiProviders = [];
+        let _aiCurrent  = {};
+
+        async function fetchAiConfig() {
+            try {
+                const r = await fetch(`${BACKEND_BASE_URL}/ai-config`);
+                const d = await r.json();
+                _aiProviders = d.providers || [];
+                _aiCurrent   = d.current  || {};
+            } catch(e) { /* 新部署前志识 */ }
+        }
+
+        function openAiSettings() {
+            const modalRoot = document.getElementById('modal-root');
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'ai-settings-modal';
+
+            const providerOpts = _aiProviders.map(p =>
+                `<option value="${p.id}" ${p.id === _aiCurrent.provider ? 'selected' : ''}>${p.name}</option>`
+            ).join('');
+
+            const currentProvider = _aiProviders.find(p => p.id === _aiCurrent.provider);
+            const modelOpts = (currentProvider?.models || []).map(m =>
+                `<option value="${m}" ${m === _aiCurrent.model ? 'selected' : ''}>${m}</option>`
+            ).join('');
+
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width:420px;">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cc-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        <h3 style="font-size:16px;font-weight:700;color:var(--cc-text);">AI 引擎设置</h3>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:14px;">
+                        <div>
+                            <label style="font-size:12px;color:var(--cc-muted);font-weight:600;display:block;margin-bottom:6px;">提供商</label>
+                            <select id="ai-provider-sel" style="width:100%;height:36px;border-radius:8px;border:1px solid var(--cc-border);background:var(--cc-surface-2);color:var(--cc-text);padding:0 28px 0 10px;font-size:13px;">
+                                ${providerOpts}
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px;color:var(--cc-muted);font-weight:600;display:block;margin-bottom:6px;">模型</label>
+                            <select id="ai-model-sel" style="width:100%;height:36px;border-radius:8px;border:1px solid var(--cc-border);background:var(--cc-surface-2);color:var(--cc-text);padding:0 28px 0 10px;font-size:13px;">
+                                ${modelOpts}
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px;color:var(--cc-muted);font-weight:600;display:block;margin-bottom:6px;">API Key</label>
+                            <input id="ai-apikey-inp" type="password" value="${_aiCurrent.api_key || ''}" placeholder="输入 API Key" style="width:100%;height:36px;border-radius:8px;border:1px solid var(--cc-border);background:var(--cc-surface-2);color:var(--cc-text);padding:0 10px;font-size:13px;outline:none;" />
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;">
+                        <button onclick="document.getElementById('ai-settings-modal').remove()" class="cc-chip" style="height:38px;min-width:80px;justify-content:center;cursor:pointer;">取消</button>
+                        <button onclick="saveAiConfig()" class="cc-chip cc-chip-primary" style="height:38px;min-width:80px;justify-content:center;cursor:pointer;">保存生效</button>
+                    </div>
+                </div>
+            `;
+            modalRoot.appendChild(modal);
+            modal.onclick = e => { if (e.target === modal) modal.remove(); };
+
+            // 切换提供商时动态刷新模型列表
+            document.getElementById('ai-provider-sel').addEventListener('change', function() {
+                const prov = _aiProviders.find(p => p.id === this.value);
+                const modelSel = document.getElementById('ai-model-sel');
+                modelSel.innerHTML = (prov?.models || []).map(m => `<option value="${m}">${m}</option>`).join('');
+            });
+        }
+
+        async function saveAiConfig() {
+            const provider = document.getElementById('ai-provider-sel').value;
+            const model    = document.getElementById('ai-model-sel').value;
+            const api_key  = document.getElementById('ai-apikey-inp').value.trim();
+            if (!api_key) { toast.error('API Key 不能为空'); return; }
+            try {
+                const r = await fetch(`${BACKEND_BASE_URL}/ai-config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider, model, api_key })
+                });
+                const d = await r.json();
+                if (d.ok) {
+                    _aiCurrent = d.config;
+                    document.getElementById('ai-settings-modal')?.remove();
+                    toast.success(`AI 引擎已切换`, `${provider} / ${model}`);
+                } else {
+                    toast.error('切换失败', JSON.stringify(d));
+                }
+            } catch(e) {
+                toast.error('请求失败', e.message);
+            }
+        }
+        // ==== END AI 设置 ====
+
         fetchOptions();
+        fetchAiConfig();
         render();
     </script>
 </body>
