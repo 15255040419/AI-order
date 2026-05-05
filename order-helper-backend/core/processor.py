@@ -77,12 +77,19 @@ def ProcessOrderResult(ai_res, raw_text, processed_products, config_data):
     # 最终客服备注 = 货品原始摘要 + 备注文字
     final_note = f"{prod_summary_text} {manual_remark}".strip()
 
+    # 5. 【新需求】物流单号提取 (单号录：JT...)
+    tracking_number = ""
+    tracking_match = re.search(r'单号录[:：\s]*([A-Z0-9\-]+)', raw_text)
+    if tracking_match:
+        tracking_number = tracking_match.group(1).strip()
+
     # 控制台深度报告 (您的调试助手)
     print(f"\n[AI 指挥解析报告]")
     print(f"| 客户账号: {customer_account}")
     print(f"| 业务员: {salesman} ({actual_code})")
     print(f"| 收款额: {total_amount} 元")
     print(f"| 最终备注: {final_note}")
+    print(f"| 物流单号: {tracking_number}")
     print("-" * 30)
 
     return {
@@ -97,5 +104,6 @@ def ProcessOrderResult(ai_res, raw_text, processed_products, config_data):
         "salesman": salesman,
         "total": total_amount,
         "freight": 0,
-        "note": final_note
+        "note": final_note,
+        "trackingNumber": tracking_number
     }

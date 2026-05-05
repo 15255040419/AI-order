@@ -12,16 +12,38 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            /* 隐藏滚动条但保留滚动功能 */
-            scrollbar-width: none;
-            /* Firefox */
-            -ms-overflow-style: none;
-            /* IE and Edge */
         }
 
-        *::-webkit-scrollbar {
-            display: none;
-            /* Chrome, Safari and Opera */
+        /* 🌟 极致简洁：永久隐藏最外层浏览器边缘的条 */
+        html::-webkit-scrollbar, body::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+        }
+
+        /* 🌟 核心：主体区域幽灵滚动条 (支持自动消失) */
+        /* 默认隐藏所有滚动条，但在 html 带有 is-scrolling 时显现 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: transparent;
+            border-radius: 10px;
+        }
+        
+        /* 仅在全局滚动时，显现滚动条 */
+        html.is-scrolling ::-webkit-scrollbar-thumb {
+            background: rgba(136, 136, 136, 0.5) !important;
+        }
+        
+        /* 🌟 额外保障：强制隐藏订单卡片内部的所有滚动条视觉 */
+        .cc-card *::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
         }
 
         body {
@@ -395,7 +417,7 @@
         .cc-card-head {
             background: var(--cc-surface-2);
             border-bottom: 1px solid var(--cc-border);
-        }
+}
 
         .cc-input-area {
             border-top: 1px solid var(--cc-border);
@@ -637,20 +659,21 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            cursor: pointer;
+            outline: none;
         }
 
-        .cc-select-button::after {
+        .cc-select::after {
             content: "";
             position: absolute;
-            right: 10px;
-            top: 50%;
+            right: 11px;
+            top: 16px;
             width: 7px;
             height: 7px;
             border-right: 1.8px solid var(--cc-muted);
             border-bottom: 1.8px solid var(--cc-muted);
-            transform: translateY(-65%) rotate(45deg);
+            transform: translateY(-50%) rotate(45deg);
             pointer-events: none;
+            z-index: 10;
         }
 
         .cc-select-menu {
@@ -873,8 +896,24 @@
             }
         }
 
+
+        // 🌟 全域幽灵滚动条逻辑
+        function initGhostScrollbar() {
+            let hideTimeout = null;
+            const html = document.documentElement;
+
+            window.addEventListener('scroll', () => {
+                html.classList.add('is-scrolling');
+                if (hideTimeout) clearTimeout(hideTimeout);
+                hideTimeout = setTimeout(() => {
+                    html.classList.remove('is-scrolling');
+                }, 1000);
+            }, { passive: true, capture: true });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             new ParticleSystem();
+            initGhostScrollbar();
         });
 
         // Toast 通知
@@ -975,7 +1014,8 @@
             inputText: '',
             mousePosition: { x: 0, y: 0 },
             theme: localStorage.getItem('order-helper-theme') || 'dark',
-            openDropdown: ''
+            openDropdown: '',
+            dropdownSearch: ''
         };
 
         function escAttr(value) {
@@ -990,20 +1030,41 @@
             const cleanOptions = [...new Set((options || []).filter(v => v !== undefined && v !== null))];
             const current = value || '';
             const isOpen = appState.openDropdown === key;
-            const allOptions = cleanOptions.includes(current) || !current ? cleanOptions : [current, ...cleanOptions];
+            
+            // 🌟 核心改进：支持输入过滤
+            let filteredOptions = cleanOptions;
+            if (isOpen && appState.dropdownSearch) {
+                const search = appState.dropdownSearch.toUpperCase();
+                filteredOptions = cleanOptions.filter(opt => String(opt).toUpperCase().includes(search));
+            }
+            
+            const allOptions = (filteredOptions.includes(current) || !current) ? filteredOptions : [current, ...filteredOptions];
+            
             return `
                 <div class="cc-select" onclick="event.stopPropagation()">
-                    <button type="button" class="cc-select-button" onclick="toggleDropdown('${key}')">
-                        ${escAttr(current || placeholder || '-- 请选择 --')}
-                    </button>
+                    <input 
+                        type="text" 
+                        class="cc-select-button" 
+                        data-key="${key}"
+                        data-field="${field}"
+                        data-order-id="${orderId}"
+                        value="${escAttr(current)}"
+                        placeholder="${escAttr(placeholder || '-- 请选择 --')}"
+                        onfocus="handleSelectFocus('${key}', this.value)"
+                        oninput="handleSelectInput('${key}', this.value)"
+                        onkeydown="if(event.key==='Enter') { saveManualEntry(this); this.blur(); }"
+                        autocomplete="off"
+                        style="cursor: text; padding-right: 24px;"
+                    />
                     ${isOpen ? `
                         <div class="cc-select-menu">
-                            <div class="cc-select-option ${!current ? 'active' : ''}" onclick="selectOrderOption(${orderId}, '${field}', '')">${escAttr(placeholder || '-- 请选择 --')}</div>
+                            ${!appState.dropdownSearch ? `<div class="cc-select-option ${!current ? 'active' : ''}" onclick="selectOrderOption(${orderId}, '${field}', '')">${escAttr(placeholder || '-- 请选择 --')}</div>` : ''}
                             ${allOptions.map(opt => `
-                                <div class="cc-select-option ${opt === current ? 'active' : ''}" onclick="selectOrderOption(${orderId}, '${field}', decodeURIComponent('${encodeURIComponent(opt)}'))">
+                                <div class="cc-select-option ${opt === current ? 'active' : ''}" onmousedown="selectOrderOption(${orderId}, '${field}', decodeURIComponent('${encodeURIComponent(opt)}'))">
                                     <span>${escAttr(opt)}</span>
                                 </div>
                             `).join('')}
+                            ${allOptions.length === 0 ? `<div class="p-3 text-center text-xs text-gray-400">未找到匹配项</div>` : ''}
                         </div>
                     ` : ''}
                 </div>
@@ -1245,12 +1306,28 @@
                             <input type="text" value="${order.address || ''}" onchange="updateOrder(${order.id}, 'address', this.value)" class="w-full h-8 text-[13px] px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-medium" />
                         </div>
 
-                        <!-- 第三排：业务属性 (重新分配比例) -->
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 py-2 border-y border-dashed border-gray-100">
-                             <div class="md:col-span-2 space-y-0.5">
+                        <!-- 第三排：客户账号 (1/2) + 结算方式 (1/4) + 收款账户 (1/4) -->
+                        <div class="grid grid-cols-4 gap-2 py-2 border-y border-dashed border-gray-100">
+                             <div class="col-span-2 space-y-0.5">
                                 <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">客户账号</label>
                                 <input type="text" value="${order.account || ''}" onchange="updateOrder(${order.id}, 'account', this.value)" class="w-full h-8 text-[13px] px-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold text-gray-800" />
                             </div>
+                            <div class="col-span-1 space-y-0.5">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">结算方式</label>
+                                ${customSelect(`order-${order.id}-payMethod`, 'payMethod', order.payMethod || '银行收款', ['银行收款', '欠款计应收'], '-- 选择方式 --', order.id)}
+                            </div>
+                            <div class="col-span-1 space-y-0.5">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">收款账户</label>
+                                ${(() => {
+                                    const receipts = [...globalOptions.receipts];
+                                    if (order.receipt && !receipts.includes(order.receipt)) receipts.push(order.receipt);
+                                    return customSelect(`order-${order.id}-receipt`, 'receipt', order.receipt || '', receipts, '-- 选择账户 --', order.id);
+                                })()}
+                            </div>
+                        </div>
+
+                        <!-- 第四排：物流相关与业务员 (三列平分) -->
+                        <div class="grid grid-cols-3 gap-2 py-1">
                             <div class="space-y-0.5">
                                 <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">业务员</label>
                                 ${customSelect(`order-${order.id}-salesman`, 'salesman', order.salesman || '', globalOptions.salesmen, '-- 请选择 --', order.id)}
@@ -1258,30 +1335,17 @@
                             <div class="space-y-0.5 relative">
                                 <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">物流公司</label>
                                 ${(() => {
-                    const options = [...globalOptions.expressOptions];
-                    if (order.express && !options.includes(order.express)) options.push(order.express);
-                    return customSelect(`order-${order.id}-express`, 'express', order.express || '', options, '-- 自动计算 --', order.id);
-                })()}
-                                <div class="h-[14px] w-full"></div>
-                                <p class="absolute right-0 bottom-0 text-[10px] text-gray-400 mt-0.5 px-1 font-medium leading-[1.1] whitespace-nowrap z-10 pointer-events-none" title="${order.expressReason || '依据判定'}">
+                                    const options = [...globalOptions.expressOptions];
+                                    if (order.express && !options.includes(order.express)) options.push(order.express);
+                                    return customSelect(`order-${order.id}-express`, 'express', order.express || '', options, '-- 自动计算 --', order.id);
+                                })()}
+                                <p class="absolute left-0 -bottom-3.5 text-[9px] text-gray-400 px-1 font-medium whitespace-nowrap pointer-events-none" title="${order.expressReason || '依据判定'}">
                                     💡 ${order.expressReason || 'AI依据规则库判定'}
                                 </p>
                             </div>
-                        </div>
-
-                        <!-- 第四排：财务关键字段 (并排) -->
-                        <div class="grid grid-cols-2 gap-2">
                             <div class="space-y-0.5">
-                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">结算方式</label>
-                                ${customSelect(`order-${order.id}-payMethod`, 'payMethod', order.payMethod || '欠款计应收', ['银行收款', '欠款计应收'], '-- 请选择 --', order.id)}
-                            </div>
-                            <div class="space-y-0.5">
-                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">收款账户</label>
-                                ${(() => {
-                    const receipts = [...globalOptions.receipts];
-                    if (order.receipt && !receipts.includes(order.receipt)) receipts.push(order.receipt);
-                    return customSelect(`order-${order.id}-receipt`, 'receipt', order.receipt || '', receipts, '-- 选择账户 --', order.id);
-                })()}
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">物流单号</label>
+                                <input type="text" value="${order.trackingNumber || ''}" onchange="updateOrder(${order.id}, 'trackingNumber', this.value)" class="w-full h-8 text-[12px] px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-800 font-bold" placeholder="物流单号" />
                             </div>
                         </div>
 
@@ -1318,15 +1382,8 @@
                                             ${order.products.map((p, idx) => `
                                                 <tr class="border-t ${p.needsReview ? 'cc-review' : 'border-gray-100'} hover:bg-gray-50/50 transition-colors">
                                                     <td class="px-3 py-2">
-                                                        <div class="flex gap-1.5 items-center">
-                                                            <select onchange="updateProduct(${order.id}, ${idx}, 'matchedName', this.value)" class="flex-1 text-[13px] px-2 py-1 border ${p.needsReview ? 'border-amber-400' : 'border-gray-200'} rounded-md focus:outline-none focus:border-blue-500 bg-white shadow-sm">
-                                                                <option value="">-- 请选择 --</option>
-                                                                ${p.matchedName ? `<option value="${p.matchedName}" selected>${p.matchedName}</option>` : ''}
-                                                                ${p.candidates ? p.candidates.filter(c => c !== p.matchedName).map(c => `<option value="${c}">${c}</option>`).join('') : ''}
-                                                                <optgroup label="基础库项">
-                                                                    ${(globalOptions.allProducts || []).slice(0, 10).map(pn => `<option value="${pn}">${pn}</option>`).join('')}
-                                                                </optgroup>
-                                                            </select>
+                                                        <div class="flex gap-1.5 items-center flex-1">
+                                                            ${customSelect(`order-${order.id}-prod-${idx}`, `prod-${idx}`, p.matchedName || '', [...(p.candidates || []), ...(globalOptions.allProducts || []).slice(0, 10)], '-- 请输入或选择 --', order.id)}
                                                             <button onclick="openProductSearch(${order.id}, ${idx})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md border border-blue-100 transition-colors" title="全库精准搜索">
                                                                 ${icons.search}
                                                             </button>
@@ -1396,15 +1453,63 @@
             renderKeepScroll();
         };
 
+        window.saveManualEntry = (el) => {
+            if (!el) return;
+            const id = el.getAttribute('data-order-id');
+            const field = el.getAttribute('data-field');
+            const value = el.value;
+            
+            if (!id || !field) return;
+
+            let finalValue = value;
+            let options = [];
+            if (field === 'salesman') options = appState.globalOptions.salesmen;
+            else if (field === 'express') options = appState.globalOptions.expressOptions;
+            else if (field === 'receipt') options = appState.globalOptions.receipts;
+            else if (field.startsWith('prod-')) {
+                const idx = parseInt(field.split('-')[1]);
+                updateProduct(parseInt(id), idx, 'matchedName', value);
+                return;
+            }
+            
+            if (options.length > 0 && value) {
+                finalValue = window.findBestMatch(options, value);
+            }
+            updateOrder(parseInt(id), field, finalValue);
+        };
+
+        window.handleSelectFocus = (key, value) => {
+            if (appState.openDropdown === key) return;
+            appState.openDropdown = key;
+            appState.dropdownSearch = '';
+            refreshDropdownCards(key);
+        };
+
+        window.handleSelectInput = (key, value) => {
+            appState.dropdownSearch = value;
+            refreshDropdownCards(key);
+        };
+
         window.toggleDropdown = (key) => {
             const previousKey = appState.openDropdown;
+            if (previousKey) {
+                const input = document.querySelector(`input[data-key="${previousKey}"]`);
+                if (input) saveManualEntry(input);
+            }
             appState.openDropdown = previousKey === key ? '' : key;
+            appState.dropdownSearch = '';
             refreshDropdownCards(previousKey, appState.openDropdown);
         };
 
         window.selectOrderOption = (id, field, value) => {
             appState.openDropdown = '';
-            updateOrder(id, field, value);
+            appState.dropdownSearch = '';
+            if (field.startsWith('prod-')) {
+                const idx = parseInt(field.split('-')[1]);
+                updateProduct(id, idx, 'matchedName', value);
+            } else {
+                updateOrder(id, field, value);
+            }
         };
 
         window.autoResizeNote = (el) => {
@@ -1965,6 +2070,16 @@
                 grid.appendChild(nextCard);
             }
 
+            // 🌟 核心改进：恢复焦点
+            if (appState.openDropdown) {
+                const input = nextCard.querySelector(`input[data-key="${appState.openDropdown}"]`);
+                if (input) {
+                    const len = input.value.length;
+                    input.focus();
+                    input.setSelectionRange(len, len);
+                }
+            }
+
             nextCard.querySelectorAll('.note-textarea').forEach(autoResizeNote);
         }
 
@@ -2192,10 +2307,17 @@
             });
         });
 
-        document.addEventListener('click', () => {
+        document.addEventListener('click', (e) => {
+            // 🌟 核心修复：如果点击的是下拉框内部（输入框或菜单），则不触发全局关闭逻辑
+            if (e.target.closest('.cc-select')) return;
+
             if (appState.openDropdown) {
                 const previousKey = appState.openDropdown;
+                const input = document.querySelector(`input[data-key="${previousKey}"]`);
+                if (input) saveManualEntry(input);
+                
                 appState.openDropdown = '';
+                appState.dropdownSearch = '';
                 refreshDropdownCards(previousKey);
             }
         });

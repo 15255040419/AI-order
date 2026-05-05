@@ -33,6 +33,17 @@ def select_express(products, province, address_text, raw_text, express_table, co
         if re.search(pattern, text_to_check):
             return target, f"[用户手动指定] -> {target}"
 
+    # 1.5 检查单号前缀 (单号录：JT...)
+    tracking_match = re.search(r'单号录[:：\s]*([A-Z0-9\-]+)', raw_text)
+    if tracking_match:
+        tn = tracking_match.group(1).upper()
+        if tn.startswith('JT'):
+            return "极兔渠道（新）", f"[单号前缀匹配] JT -> 极兔渠道（新）"
+        if tn.startswith('SF'):
+            return "顺丰现付（渠道）", f"[单号前缀匹配] SF -> 顺丰现付（渠道）"
+        if tn.startswith('YT'):
+            return "圆通（渠道）", f"[单号前缀匹配] YT -> 圆通（渠道）"
+
     # 2. 匹配省份规则
     province_rule = None
     if province:

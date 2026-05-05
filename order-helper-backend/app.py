@@ -133,13 +133,18 @@ def local_pre_parse(text, data_loader):
         return "".join(parts)
 
     # 2. 扫描货品 (完全匹配规格编号)
-    # 【关键】对商品的扫描必须限制在「备注：」之前，备注内容只进客服备注字段
-    note_match = re.search(r'备注：|备注:', text)
+    # 【关键】对商品的扫描必须限制在「备注：」之前，并且要剔除「单号录：」的内容，防止单号中的字符误匹配货品
+    tracking_match = re.search(r'单号录[:：\s]*([A-Z0-9\-]+)', text)
+    product_scan_text = text
+    if tracking_match:
+        # 暂时挖掉单号部分，防止干扰
+        product_scan_text = text.replace(tracking_match.group(0), " [单号已占位] ")
+
+    note_match = re.search(r'备注：|备注:', product_scan_text)
     if note_match:
-        product_scan_text = text[:note_match.start()]
+        product_scan_text = product_scan_text[:note_match.start()]
         found["note"] = text[note_match.end():].strip()
     else:
-        product_scan_text = text
         found["note"] = ""
 
     text_upper = product_scan_text.upper()
