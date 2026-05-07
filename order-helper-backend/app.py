@@ -273,9 +273,24 @@ def _extract_receiver_address(text, local_info):
     address = ""
     if phone and phone in prefix:
         left, right = prefix.split(phone, 1)
-        receiver = receiver or left.strip(" ，,。;；")
+        left = left.strip(" ，,。;；")
         right = re.sub(r'^\s*转\s*\d+\s*', '', right).strip(" ，,。;；")
-        address = right
+        
+        address_keywords = ["省", "市", "区", "县", "乡", "镇", "村", "街道", "路", "号", "大厦", "广场", "街", "弄", "巷", "小区", "大学", "店"]
+        
+        # 启发式判断哪边是地址
+        # 如果左侧字数长且包含省市县等地址关键字，右侧字数较短像姓名，则判定左侧为地址
+        is_left_address = False
+        if len(left) > 5 and len(right) <= 8:
+            if any(k in left for k in address_keywords) or get_province(left, ""):
+                is_left_address = True
+                
+        if is_left_address:
+            receiver = receiver or right
+            address = left
+        else:
+            receiver = receiver or left
+            address = right
     return receiver, address
 
 
