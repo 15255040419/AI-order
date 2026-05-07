@@ -25,6 +25,7 @@ app = Flask(__name__)
 CORS(app)
 
 data_loader = DataLoader()
+DATA_RELOAD_LOCK = threading.Lock()
 
 # AI 配置（支持运行时热切换）
 AI_CONFIG = {
@@ -202,8 +203,126 @@ def local_pre_parse(text, data_loader):
         {k: v for k, v in p.items() if k != "_pos"}
         for p in sorted(found["products"], key=lambda item: item.get("_pos", 10**9))
     ]
+    found["product_start"] = _find_first_product_position(product_scan_text, found["products"])
 
     return found
+
+
+def _find_first_product_position(text, products):
+    positions = []
+    for product in products or []:
+        raw_name = str(product.get("raw_name") or product.get("name") or "").strip()
+        if not raw_name:
+            continue
+        pos = text.find(raw_name)
+        if pos >= 0:
+            positions.append(pos)
+    return min(positions) if positions else -1
+
+
+def _strip_salesman_suffix(value, config):
+    text = str(value or "").strip()
+    if not text:
+        return "", ""
+    salesman_map = config.get("业务员映射", {})
+    match = re.search(r'^(.*?)[（(]([A-Z0-9\-]+)[）)]\s*$', text)
+    if match and match.group(2).upper() in salesman_map:
+        return match.group(1).strip(), match.group(2).upper()
+    return text, ""
+
+
+def _extract_customer_from_text(text, data_loader):
+    config = data_loader.config
+    account = ""
+    salesman_code = ""
+
+    match = re.search(r'(?:系统录[入制]?|系统记录)[:：\s]*([\s\S]*?)(?:备注[:：]|单号录[:：]|$)', text)
+    if match:
+        segment = re.sub(r'\s+', ' ', match.group(1)).strip(" ，,。;；")
+        segment = re.sub(r'\s{2,}.*$', '', segment).strip()
+        account, salesman_code = _strip_salesman_suffix(segment, config)
+
+    if account:
+        return account, salesman_code
+
+    text_norm = normalize_key(text)
+    best_key = ""
+    best_profile = None
+    for key, profile in getattr(data_loader, "customer_index", {}).items():
+        key_text = str(key).strip()
+        key_norm = normalize_key(key_text)
+        if key_norm and key_norm in text_norm and len(key_norm) > len(best_key):
+            best_key = key_norm
+            best_profile = profile
+            account = str(profile.get("客户账号") or key_text).strip()
+    return account, salesman_code
+
+
+def _extract_receiver_address(text, local_info):
+    phone = local_info.get("phone", "")
+    product_start = local_info.get("product_start", -1)
+    cut_points = [p for p in [product_start] if isinstance(p, int) and p > 0]
+    for marker in ["已付", "未付", "系统录", "备注:", "备注：", "单号录"]:
+        pos = text.find(marker)
+        if pos > 0:
+            cut_points.append(pos)
+    prefix = text[:min(cut_points)] if cut_points else text
+    prefix = re.sub(r'\s+', ' ', prefix).strip()
+
+    receiver = local_info.get("receiver", "")
+    address = ""
+    if phone and phone in prefix:
+        left, right = prefix.split(phone, 1)
+        receiver = receiver or left.strip(" ，,。;；")
+        right = re.sub(r'^\s*转\s*\d+\s*', '', right).strip(" ，,。;；")
+        address = right
+    return receiver, address
+
+
+def _local_match_summary(products, data_loader):
+    matched = []
+    for product in products or []:
+        result = find_strict_match(product.get("raw_name") or product.get("name"), data_loader)
+        matched.append(result.get("status") == "matched")
+    return matched
+
+
+def build_local_ai_result(raw_text, local_info, data_loader):
+    account, account_salesman_code = _extract_customer_from_text(raw_text, data_loader)
+    if account:
+        local_info["customer_account"] = account
+    if account_salesman_code:
+        local_info["salesman_code"] = account_salesman_code
+
+    receiver, address = _extract_receiver_address(raw_text, local_info)
+    products = [
+        {"raw_name": p.get("raw_name"), "qty": p.get("qty", 1)}
+        for p in local_info.get("products", [])
+        if p.get("raw_name")
+    ]
+    return {
+        "receiver": receiver,
+        "phone": local_info.get("phone", ""),
+        "address": address,
+        "province": get_province(address, ""),
+        "products": products,
+        "payment_status": "已付" if "已付" in raw_text else "",
+        "customer_account": local_info.get("customer_account", ""),
+        "salesman_code": local_info.get("salesman_code", ""),
+        "total_amount": 0,
+    }
+
+
+def can_use_local_fast_path(local_ai_res, local_info, data_loader):
+    products = local_ai_res.get("products", [])
+    if not (local_ai_res.get("phone") and local_ai_res.get("address") and products):
+        return False, "missing_phone_address_or_products"
+    match_flags = _local_match_summary(products, data_loader)
+    if not match_flags or not all(match_flags):
+        return False, "unmatched_product"
+    if not local_ai_res.get("customer_account"):
+        return False, "missing_customer_account"
+    return True, "all_core_fields_resolved_locally"
 
 
 
@@ -267,6 +386,21 @@ def get_options():
         "allProducts": data_loader.all_products,
         "allProductsData": products_data
     }))
+
+
+@app.route('/api/reload-data', methods=['POST'])
+def reload_data():
+    start = time.time()
+    data_loader.load_all()
+    return jsonify(sanitize_data({
+        "ok": True,
+        "durationSeconds": round(time.time() - start, 3),
+        "stockRows": 0 if data_loader.stock_data is None else len(data_loader.stock_data),
+        "comboRows": 0 if data_loader.combo_data is None else len(data_loader.combo_data),
+        "customerRows": 0 if data_loader.customer_data is None else len(data_loader.customer_data),
+        "sourceMtime": data_loader.data_source_mtime,
+    }))
+
 
 def local_payment_check(text, config):
     """
@@ -543,11 +677,24 @@ def _progress(progress, step, message, **extra):
             **extra
         })
 
+
+def refresh_data_if_changed():
+    if not data_loader.has_source_updates():
+        return False
+    with DATA_RELOAD_LOCK:
+        if not data_loader.has_source_updates():
+            return False
+        logger.info("检测到 Excel/配置文件更新，自动刷新后台数据缓存")
+        data_loader.load_all()
+        return True
+
+
 def process_order_text(raw_text, progress=None):
     start_time = time.time()
     raw_text = (raw_text or '').strip()
     if not raw_text:
         raise ValueError("请输入内容")
+    refresh_data_if_changed()
 
     logger.info(">>> 启动混合解析引擎 (精准分工版) <<<")
     _progress(progress, "start", "启动混合解析引擎")
@@ -591,26 +738,41 @@ def process_order_text(raw_text, progress=None):
         local_info.get("customer_account"),
         local_info.get("salesman_code"),
     ])
-    _progress(progress, "ai_parse", "调用 AI 解析地址与订单字段", usedLocalContext=has_local_context)
-    ai_start = time.time()
-    ai_res, err = ai_parser.parse_with_context(
-        raw_text, 
-        product_ref=product_context,
-        customer_ref=local_info["receiver"] or "优先匹配老客户",
-        salesman_ref=salesmen_keys,
-        pre_parsed=local_info if has_local_context else None
-    )
-    if not ai_res:
-        raise RuntimeError(f"AI服务异常: {err}")
-    debug_trace["steps"].append({
-        "name": "ai_parse",
-        "durationSeconds": round(time.time() - ai_start, 3),
-        "usedProductCandidates": bool(product_context),
-        "usedLocalContext": has_local_context,
-        "receiver": ai_res.get("receiver"),
-        "address": ai_res.get("address"),
-        "products": ai_res.get("products", []),
-    })
+    local_ai_res = build_local_ai_result(raw_text, local_info, data_loader)
+    use_local_fast_path, fast_path_reason = can_use_local_fast_path(local_ai_res, local_info, data_loader)
+    if use_local_fast_path:
+        _progress(progress, "ai_parse", "本地规则已完整识别，跳过 AI", usedLocalContext=True)
+        ai_res = local_ai_res
+        debug_trace["steps"].append({
+            "name": "ai_parse",
+            "skipped": True,
+            "reason": fast_path_reason,
+            "receiver": ai_res.get("receiver"),
+            "address": ai_res.get("address"),
+            "products": ai_res.get("products", []),
+        })
+    else:
+        _progress(progress, "ai_parse", "调用 AI 解析地址与订单字段", usedLocalContext=has_local_context, reason=fast_path_reason)
+        ai_start = time.time()
+        ai_res, err = ai_parser.parse_with_context(
+            raw_text, 
+            product_ref=product_context,
+            customer_ref=local_info["receiver"] or "优先匹配老客户",
+            salesman_ref=salesmen_keys,
+            pre_parsed=local_info if has_local_context else None
+        )
+        if not ai_res:
+            raise RuntimeError(f"AI服务异常: {err}")
+        debug_trace["steps"].append({
+            "name": "ai_parse",
+            "durationSeconds": round(time.time() - ai_start, 3),
+            "usedProductCandidates": bool(product_context),
+            "usedLocalContext": has_local_context,
+            "fastPathMiss": fast_path_reason,
+            "receiver": ai_res.get("receiver"),
+            "address": ai_res.get("address"),
+            "products": ai_res.get("products", []),
+        })
 
     # [补全引擎] 4. 货品详情严格对齐
     _progress(progress, "price_plan", "拆分价格与补运费")

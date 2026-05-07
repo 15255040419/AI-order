@@ -27,7 +27,11 @@ def strip_qty_suffix(value):
     return text.strip()
 
 
-def product_identity(info):
+def product_identity(info, match_type=""):
+    if str(match_type).startswith("exact:stock"):
+        stock_identity = str(info.get("规格编号") or "").strip()
+        if stock_identity:
+            return stock_identity
     return str(info.get("货品名称") or "").strip()
 
 
@@ -64,7 +68,7 @@ def _unique_result(matches, match_type):
 
     if len(unique) == 1:
         return {
-            "matched": product_identity(unique[0]),
+            "matched": product_identity(unique[0], match_type),
             "details": unique[0],
             "status": "matched",
             "matchType": match_type,
@@ -77,7 +81,7 @@ def _unique_result(matches, match_type):
             "details": {},
             "status": "ambiguous",
             "matchType": f"{match_type}:multiple",
-            "candidates": [product_identity(info) for info in unique if product_identity(info)],
+            "candidates": [product_identity(info, match_type) for info in unique if product_identity(info, match_type)],
         }
 
     return None
@@ -104,19 +108,29 @@ def find_strict_match(query, data_loader):
             "candidates": [],
         }
 
+    combo_index = getattr(data_loader, "normalized_combo_name_index", None) or {}
     combo_matches = []
-    for info in _iter_frame_rows(getattr(data_loader, "combo_data", None)):
-        if normalize_key(info.get("货品名称")) in keys:
-            combo_matches.append(info)
+    if combo_index:
+        for key in keys:
+            combo_matches.extend(combo_index.get(key, []))
+    else:
+        for info in _iter_frame_rows(getattr(data_loader, "combo_data", None)):
+            if normalize_key(info.get("货品名称")) in keys:
+                combo_matches.append(info)
 
     combo_result = _unique_result(combo_matches, "exact:combo.货品名称")
     if combo_result:
         return combo_result
 
+    item_index = getattr(data_loader, "normalized_item_no_index", None) or {}
     stock_matches = []
-    for info in _iter_frame_rows(getattr(data_loader, "stock_data", None)):
-        if normalize_key(info.get("规格编号")) in keys:
-            stock_matches.append(info)
+    if item_index:
+        for key in keys:
+            stock_matches.extend(item_index.get(key, []))
+    else:
+        for info in _iter_frame_rows(getattr(data_loader, "stock_data", None)):
+            if normalize_key(info.get("规格编号")) in keys:
+                stock_matches.append(info)
 
     stock_result = _unique_result(stock_matches, "exact:stock.规格编号")
     if stock_result:

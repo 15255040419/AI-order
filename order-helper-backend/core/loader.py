@@ -4,8 +4,20 @@ import os
 import logging
 import pickle
 import time
+import re
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_lookup_key(value):
+    if value is None:
+        return ""
+    text = str(value).strip()
+    if not text or text.lower() == "nan":
+        return ""
+    text = text.replace("（", "(").replace("）", ")")
+    text = re.sub(r"\s+", "", text)
+    return text.upper()
 
 class DataLoader:
     def __init__(self):
@@ -26,6 +38,16 @@ class DataLoader:
         self.item_no_index = {}   # 规格编号 -> 详情
         self.product_name_index = {} # 货品名称 -> 详情
         self.customer_phone_index = {} # 电话 -> 客户信息
+        self.normalized_item_no_index = {} # 规范化规格编号 -> [详情]
+        self.normalized_combo_name_index = {} # 规范化组合装货品名称 -> [详情]
+        self.normalized_customer_index = {} # 规范化客户账号/名称 -> 客户信息
+        self.data_source_mtime = {}
+
+    def _append_index(self, target, key, value):
+        norm_key = normalize_lookup_key(key)
+        if not norm_key:
+            return
+        target.setdefault(norm_key, []).append(value)
 
     def _get_cache_path(self, filename):
         return os.path.join(self.cache_dir, f"{filename}.pkl")
@@ -34,10 +56,21 @@ class DataLoader:
         if not os.path.exists(cache_path): return True
         return os.path.getmtime(source_path) > os.path.getmtime(cache_path)
 
+    def has_source_updates(self):
+        for filename, loaded_mtime in self.data_source_mtime.items():
+            source_path = os.path.join(self.data_dir, filename)
+            try:
+                if os.path.exists(source_path) and os.path.getmtime(source_path) > loaded_mtime:
+                    return True
+            except OSError:
+                continue
+        return False
+
     def _load_excel_with_cache(self, filename):
         source_path = os.path.join(self.data_dir, filename)
         if not os.path.exists(source_path):
             return None
+        self.data_source_mtime[filename] = os.path.getmtime(source_path)
             
         cache_path = self._get_cache_path(filename)
         if not self._should_refresh(source_path, cache_path):
@@ -57,6 +90,15 @@ class DataLoader:
     def load_all(self):
         """全量分步加载，带有二进制缓存"""
         start_time = time.time()
+        self.customer_index = {}
+        self.all_products = []
+        self.item_no_index = {}
+        self.product_name_index = {}
+        self.customer_phone_index = {}
+        self.normalized_item_no_index = {}
+        self.normalized_combo_name_index = {}
+        self.normalized_customer_index = {}
+        self.data_source_mtime = {}
         
         # 1. 配置规则
         try:
@@ -90,7 +132,9 @@ class DataLoader:
                     if name and name != 'nan': 
                         self.product_name_index[name] = d
                         if name not in self.all_products: self.all_products.append(name)
-                    if item_no and item_no != 'nan': self.item_no_index[item_no] = d
+                    if item_no and item_no != 'nan':
+                        self.item_no_index[item_no] = d
+                        self._append_index(self.normalized_item_no_index, item_no, d)
                 logger.info(f"✅ 已装载库存索引: {len(self.product_name_index)} 项")
         except Exception as e: logger.error(f"❌ 库存表索引失败: {e}")
 
@@ -106,6 +150,7 @@ class DataLoader:
                         name = str(d.get(col_found, '')).strip()
                         if name and name != 'nan':
                             self.product_name_index[name] = d
+                            self._append_index(self.normalized_combo_name_index, name, d)
                             if name not in self.all_products: self.all_products.append(name)
                     logger.info(f"✅ 已装载组合装索引: {len(self.combo_data)} 项")
         except Exception as e: logger.error(f"❌ 组合装索引失败: {e}")
@@ -119,8 +164,12 @@ class DataLoader:
                     acc = str(d.get('客户账号', '')).strip()
                     name = str(d.get('客户名称', '')).strip()
                     phone = str(d.get('联系电话', '')).strip()
-                    if acc and acc != 'nan': self.customer_index[acc] = d
-                    if name and name != 'nan': self.customer_index[name] = d
+                    if acc and acc != 'nan':
+                        self.customer_index[acc] = d
+                        self.normalized_customer_index[normalize_lookup_key(acc)] = d
+                    if name and name != 'nan':
+                        self.customer_index[name] = d
+                        self.normalized_customer_index[normalize_lookup_key(name)] = d
                     if phone and phone != 'nan': 
                         self.customer_index[phone] = d
                         self.customer_phone_index[phone] = d
