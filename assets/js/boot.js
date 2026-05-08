@@ -1,0 +1,3 @@
+﻿fetchOptions();
+        fetchAiConfig();
+        render();

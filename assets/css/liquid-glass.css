@@ -1,0 +1,270 @@
+﻿/* Apple-style Liquid Glass pass: neutral, adaptive, and consistent. */
+        :root {
+            --lg-fill: rgba(255, 255, 255, 0.20);
+            --lg-fill-strong: rgba(255, 255, 255, 0.30);
+            --lg-fill-soft: rgba(255, 255, 255, 0.12);
+            --lg-stroke: rgba(255, 255, 255, 0.42);
+            --lg-stroke-soft: rgba(255, 255, 255, 0.24);
+            --lg-shadow: rgba(16, 24, 32, 0.18);
+            --lg-inner-dark: rgba(20, 28, 36, 0.14);
+            --lg-highlight: rgba(255, 255, 255, 0.72);
+        }
+
+        html[data-theme="dark"] {
+            --lg-fill: rgba(255, 255, 255, 0.12);
+            --lg-fill-strong: rgba(255, 255, 255, 0.18);
+            --lg-fill-soft: rgba(255, 255, 255, 0.07);
+            --lg-stroke: rgba(220, 240, 255, 0.28);
+            --lg-stroke-soft: rgba(220, 240, 255, 0.16);
+            --lg-shadow: rgba(0, 0, 0, 0.34);
+            --lg-inner-dark: rgba(0, 0, 0, 0.22);
+            --lg-highlight: rgba(255, 255, 255, 0.34);
+        }
+
+        .cc-card,
+        .cc-terminal,
+        .modal-content,
+        .cc-composer,
+        .cc-select-menu,
+        .cc-product-panel {
+            background:
+                linear-gradient(180deg, var(--lg-fill-strong), var(--lg-fill-soft)) !important;
+            border-color: var(--lg-stroke) !important;
+            box-shadow:
+                0 18px 48px var(--lg-shadow),
+                inset 0 1px 0 var(--lg-highlight),
+                inset 0 -1px 0 var(--lg-inner-dark) !important;
+            backdrop-filter: blur(24px) saturate(1.8) contrast(1.08) brightness(1.04);
+            -webkit-backdrop-filter: blur(24px) saturate(1.8) contrast(1.08) brightness(1.04);
+        }
+
+        .cc-card,
+        .cc-terminal {
+            border-radius: 18px !important;
+        }
+
+        .cc-card::before,
+        .cc-terminal::before {
+            background:
+                radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.46), transparent 28%),
+                radial-gradient(circle at 95% 100%, color-mix(in srgb, var(--cc-accent) 16%, transparent), transparent 34%);
+            opacity: 0.58;
+            mix-blend-mode: screen;
+        }
+
+        .cc-card::after,
+        .cc-terminal::after {
+            border-color: var(--lg-stroke-soft);
+            box-shadow:
+                inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+                inset 0 0 24px rgba(255, 255, 255, 0.08);
+        }
+
+        .cc-card-head,
+        .cc-terminal-bar,
+        .cc-input-area {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: var(--lg-stroke-soft) !important;
+            backdrop-filter: blur(18px) saturate(1.6);
+            -webkit-backdrop-filter: blur(18px) saturate(1.6);
+        }
+
+        .cc-chip,
+        .cc-send,
+        .cc-icon-glass,
+        .cc-logo {
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.10)) !important;
+            border-color: var(--lg-stroke) !important;
+            box-shadow:
+                0 8px 22px var(--lg-shadow),
+                inset 0 1px 0 var(--lg-highlight),
+                inset 0 -1px 0 var(--lg-inner-dark) !important;
+            backdrop-filter: blur(18px) saturate(1.9) contrast(1.08);
+            -webkit-backdrop-filter: blur(18px) saturate(1.9) contrast(1.08);
+        }
+
+        html[data-theme="dark"] .cc-chip,
+        html[data-theme="dark"] .cc-send,
+        html[data-theme="dark"] .cc-icon-glass,
+        html[data-theme="dark"] .cc-logo {
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06)) !important;
+        }
+
+        .cc-chip::before,
+        .cc-send::before,
+        .cc-icon-glass::before,
+        .cc-logo::before {
+            background:
+                radial-gradient(circle at 30% 0%, rgba(255, 255, 255, 0.48), transparent 42%),
+                radial-gradient(circle at 90% 100%, color-mix(in srgb, var(--cc-accent) 12%, transparent), transparent 40%);
+            opacity: 0.54;
+        }
+
+        .cc-chip::after,
+        .cc-send::after,
+        .cc-icon-glass::after {
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.56), transparent);
+            opacity: 0.70;
+        }
+
+        .cc-select-option:hover,
+        .cc-select-option.active,
+        .cc-product-panel tr:hover {
+            background: rgba(255, 255, 255, 0.16) !important;
+        }
+
+        .cc-card input,
+        .cc-card textarea,
+        .cc-card select,
+        .modal-content input,
+        .modal-content select,
+        #input-textarea {
+            background: rgba(255, 255, 255, 0.42) !important;
+            border-color: rgba(255, 255, 255, 0.44) !important;
+        }
+
+        html[data-theme="dark"] .cc-card input,
+        html[data-theme="dark"] .cc-card textarea,
+        html[data-theme="dark"] .cc-card select,
+        html[data-theme="dark"] .modal-content input,
+        html[data-theme="dark"] .modal-content select,
+        html[data-theme="dark"] #input-textarea {
+            background: rgba(255, 255, 255, 0.14) !important;
+            border-color: rgba(220, 240, 255, 0.24) !important;
+        }
+
+        /* Final material tuning: menus need frosted coverage; buttons stay transparent. */
+        .cc-chip,
+        .cc-send,
+        .cc-icon-glass,
+        .cc-logo {
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.055)) !important;
+            border-color: rgba(255, 255, 255, 0.32) !important;
+            box-shadow:
+                0 8px 20px rgba(18, 24, 28, 0.16),
+                inset 0 1px 0 rgba(255, 255, 255, 0.46),
+                inset 0 -1px 0 rgba(20, 28, 32, 0.16) !important;
+            backdrop-filter: blur(22px) saturate(1.65) contrast(1.08);
+            -webkit-backdrop-filter: blur(22px) saturate(1.65) contrast(1.08);
+        }
+
+        .cc-chip:hover,
+        .cc-send:hover,
+        .cc-icon-glass:hover {
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.075)) !important;
+            border-color: rgba(255, 255, 255, 0.42) !important;
+        }
+
+        .cc-chip-primary {
+            background:
+                linear-gradient(180deg, color-mix(in srgb, var(--cc-accent) 10%, rgba(255, 255, 255, 0.16)), rgba(255, 255, 255, 0.055)) !important;
+        }
+
+        .cc-chip-danger {
+            background:
+                linear-gradient(180deg, color-mix(in srgb, var(--cc-danger) 10%, rgba(255, 255, 255, 0.16)), rgba(255, 255, 255, 0.055)) !important;
+            border-color: color-mix(in srgb, var(--cc-danger) 24%, rgba(255, 255, 255, 0.34)) !important;
+        }
+
+        html[data-theme="dark"] .cc-chip,
+        html[data-theme="dark"] .cc-send,
+        html[data-theme="dark"] .cc-icon-glass,
+        html[data-theme="dark"] .cc-logo {
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045)) !important;
+            border-color: rgba(220, 240, 255, 0.24) !important;
+        }
+
+        .cc-select-menu {
+            background:
+                linear-gradient(180deg, rgba(244, 248, 242, 0.72), rgba(232, 238, 228, 0.62)) !important;
+            border-color: rgba(255, 255, 255, 0.42) !important;
+            box-shadow:
+                0 18px 42px rgba(18, 24, 28, 0.22),
+                inset 0 1px 0 rgba(255, 255, 255, 0.48),
+                inset 0 -1px 0 rgba(20, 28, 32, 0.12) !important;
+            backdrop-filter: blur(30px) saturate(1.25) contrast(1.02);
+            -webkit-backdrop-filter: blur(30px) saturate(1.25) contrast(1.02);
+        }
+
+        html[data-theme="dark"] .cc-select-menu {
+            background:
+                linear-gradient(180deg, rgba(22, 30, 42, 0.76), rgba(12, 18, 28, 0.66)) !important;
+        }
+
+        .cc-product-panel {
+            background:
+                linear-gradient(180deg, var(--lg-fill-strong), var(--lg-fill-soft)) !important;
+            border-color: var(--lg-stroke) !important;
+            box-shadow:
+                0 18px 48px var(--lg-shadow),
+                inset 0 1px 0 var(--lg-highlight),
+                inset 0 -1px 0 var(--lg-inner-dark) !important;
+            backdrop-filter: blur(24px) saturate(1.8) contrast(1.08) brightness(1.04);
+            -webkit-backdrop-filter: blur(24px) saturate(1.8) contrast(1.08) brightness(1.04);
+        }
+
+        .cc-product-panel thead,
+        .cc-product-panel tbody,
+        .cc-product-panel tr,
+        .cc-product-panel table {
+            background: transparent !important;
+        }
+
+        .cc-product-panel input,
+        .cc-product-panel .cc-select-button {
+            background: rgba(255, 255, 255, 0.42) !important;
+        }
+
+        html[data-theme="light"] .cc-chip,
+        html[data-theme="light"] .cc-send,
+        html[data-theme="light"] .cc-icon-glass,
+        html[data-theme="light"] .cc-logo {
+            background: rgba(255, 255, 255, 0.14) !important;
+            border: 1px solid rgba(255, 255, 255, 0.28) !important;
+            box-shadow:
+                0 8px 18px rgba(24, 32, 36, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.42),
+                inset 0 -1px 0 rgba(35, 45, 48, 0.10) !important;
+            backdrop-filter: blur(24px) saturate(1.55) contrast(1.04);
+            -webkit-backdrop-filter: blur(24px) saturate(1.55) contrast(1.04);
+        }
+
+        html[data-theme="light"] .cc-chip:hover,
+        html[data-theme="light"] .cc-send:hover,
+        html[data-theme="light"] .cc-icon-glass:hover {
+            background: rgba(255, 255, 255, 0.20) !important;
+            border-color: rgba(255, 255, 255, 0.34) !important;
+            box-shadow:
+                0 10px 22px rgba(24, 32, 36, 0.14),
+                inset 0 1px 0 rgba(255, 255, 255, 0.46),
+                inset 0 -1px 0 rgba(35, 45, 48, 0.10) !important;
+        }
+
+        html[data-theme="light"] .cc-chip::before,
+        html[data-theme="light"] .cc-send::before,
+        html[data-theme="light"] .cc-icon-glass::before,
+        html[data-theme="light"] .cc-logo::before {
+            opacity: 0.18;
+            background:
+                radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.42), transparent 52%);
+        }
+
+        html[data-theme="light"] .cc-chip::after,
+        html[data-theme="light"] .cc-send::after,
+        html[data-theme="light"] .cc-icon-glass::after {
+            opacity: 0;
+        }
+
+        html[data-theme="light"] .cc-chip-danger {
+            color: #c82333;
+            text-shadow: 0 1px 1px rgba(255, 255, 255, 0.28);
+        }
+
+        html[data-theme="light"] .cc-chip-primary {
+            color: #19211d;
+        }

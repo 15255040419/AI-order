@@ -30,7 +30,7 @@ def ProcessOrderResult(ai_res, raw_text, processed_products, config_data):
         customer_account = ai_res.get("customer_account", "")
 
     # 3. 金额与手机 (正则先行与多重兜底)
-    phones = re.findall(r'1[3-9]\d{9}', raw_text)
+    phones = re.findall(r'1[3-9]\d{9}(?:[-转]\d{1,8})?', raw_text)
     phone = phones[0] if phones else ai_res.get("phone", "")
     
     # 增强总价识别（不再强依赖“元”字）

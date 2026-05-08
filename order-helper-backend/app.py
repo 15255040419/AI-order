@@ -111,12 +111,12 @@ def local_pre_parse(text, data_loader):
     }
     
     # 1. 提取手机号
-    phones = re.findall(r'1[3-9]\d{9}', text)
+    phone_matches = re.findall(r'1[3-9]\d{9}(?:[-转]\d{1,8})?', text)
+    phones = [re.match(r'1[3-9]\d{9}', p).group(0) for p in phone_matches]
     if phones:
-        found["phone"] = phones[0]
+        found["phone"] = phone_matches[0]
         if phones[0] in data_loader.customer_phone_index:
             cust = data_loader.customer_phone_index[phones[0]]
-            found["receiver"] = cust.get('客户名称', '')
             found["customer_account"] = cust.get('客户账号', '')
             found["salesman_code"] = cust.get('业务员', '')
 
@@ -154,6 +154,8 @@ def local_pre_parse(text, data_loader):
     for item_no, info in data_loader.item_no_index.items():
         item_no_text = str(item_no).strip()
         if not item_no_text or item_no_text.lower() == 'nan':
+            continue
+        if len(normalize_key(item_no_text)) < 3:
             continue
         normalized_item_no = normalize_key(item_no_text)
         if normalized_item_no and normalized_item_no in normalized_text:
@@ -210,6 +212,18 @@ def local_pre_parse(text, data_loader):
 
 def _find_first_product_position(text, products):
     positions = []
+    normalized_text = normalize_key(text)
+    index_map = []
+    for idx, ch in enumerate(str(text or "")):
+        if ch.isspace():
+            continue
+        if ch in "（(":
+            index_map.append(idx)
+        elif ch in "）)":
+            index_map.append(idx)
+        else:
+            index_map.append(idx)
+
     for product in products or []:
         raw_name = str(product.get("raw_name") or product.get("name") or "").strip()
         if not raw_name:
@@ -217,6 +231,10 @@ def _find_first_product_position(text, products):
         pos = text.find(raw_name)
         if pos >= 0:
             positions.append(pos)
+            continue
+        norm_pos = normalized_text.find(normalize_key(raw_name))
+        if norm_pos >= 0 and norm_pos < len(index_map):
+            positions.append(index_map[norm_pos])
     return min(positions) if positions else -1
 
 
@@ -260,6 +278,8 @@ def _extract_customer_from_text(text, data_loader):
 
 def _extract_receiver_address(text, local_info):
     phone = local_info.get("phone", "")
+    base_phone_match = re.match(r'1[3-9]\d{9}', phone)
+    base_phone = base_phone_match.group(0) if base_phone_match else phone
     product_start = local_info.get("product_start", -1)
     cut_points = [p for p in [product_start] if isinstance(p, int) and p > 0]
     for marker in ["已付", "未付", "系统录", "备注:", "备注：", "单号录"]:
@@ -271,24 +291,35 @@ def _extract_receiver_address(text, local_info):
 
     receiver = local_info.get("receiver", "")
     address = ""
-    if phone and phone in prefix:
-        left, right = prefix.split(phone, 1)
+    split_phone = phone if phone and phone in prefix else base_phone
+    if split_phone and split_phone in prefix:
+        left, right = prefix.split(split_phone, 1)
         left = left.strip(" ，,。;；")
         right = re.sub(r'^\s*转\s*\d+\s*', '', right).strip(" ，,。;；")
         
-        address_keywords = ["省", "市", "区", "县", "乡", "镇", "村", "街道", "路", "号", "大厦", "广场", "街", "弄", "巷", "小区", "大学", "店"]
-        
-        # 启发式判断哪边是地址
-        # 如果左侧字数长且包含省市县等地址关键字，右侧字数较短像姓名，则判定左侧为地址
-        is_left_address = False
-        if len(left) > 5 and len(right) <= 8:
-            if any(k in left for k in address_keywords) or get_province(left, ""):
-                is_left_address = True
-                
-        if is_left_address:
-            receiver = receiver or right
-            address = left
+        def looks_like_address(value):
+            return bool(re.search(r'省|市|区|县|镇|乡|街道|路|号|室|苑|门口|店|仓库|村|大道|巷|楼|小区|广场|大厦', value or "")) or bool(get_province(value or "", ""))
+
+        def looks_like_receiver(value):
+            value = str(value or "").strip()
+            if "老板" in value:
+                return len(value) <= 16
+            return bool(value) and len(value) <= 16 and not looks_like_address(value)
+
+        if looks_like_address(left):
+            parts = [p.strip(" ，,。;；") for p in re.split(r'[，,]', left) if p.strip(" ，,。;；")]
+            if len(parts) >= 2 and looks_like_receiver(parts[-1]):
+                # 地址，收货人，手机号
+                receiver = receiver or parts[-1]
+                address = "，".join(parts[:-1])
+            elif looks_like_receiver(right):
+                # 地址，手机号，收货人
+                receiver = receiver or right
+                address = left
+            else:
+                address = left
         else:
+            # 收货人，手机号，地址
             receiver = receiver or left
             address = right
     return receiver, address

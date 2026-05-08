@@ -79,7 +79,20 @@ order-helper-backend/
     快递表格.xls
     客户档案.xlsx
 
-order-assistant-full.html 前端页面
+order-assistant-full.html 前端页面骨架，只负责加载资源
+assets/
+  styles.css             前端基础样式
+  css/
+    liquid-glass.css     Liquid Glass 视觉材质最终覆盖层
+  js/
+    core.js              后端地址、粒子、toast、状态、工具函数
+    components.js        欢迎页、订单卡片组件
+    interactions.js      订单字段更新、下拉、货品搜索交互
+    api-orders.js        拉配置、解析订单、提交订单
+    export.js            导出和清空
+    render.js            主渲染和局部刷新
+    settings.js          AI 设置、背景上传
+    boot.js              启动入口
 README.md                 当前维护入口
 ```
 
@@ -436,3 +449,52 @@ JY-335C黑*4 95*4=380元 已付安徽仝心 系统录 趣味鸭连锁 备注：2
 - 库存表命中后的展示名改为命中的规格编号，例如 `57*50纸`、`JY-335C黑`。
 - 验证用户样例：两条样例均跳过 AI，完整解析约 `0.02s`。
 - 合并历史规则文档到 README，当前有效规则以本文件为准。
+
+后续补充修复：
+
+- 地址支持三种常见顺序：`收货人 手机号 地址`、`地址 手机号 收货人`、`地址 收货人 手机号`。
+- 修复货品规格里多空格或中英文括号不一致时，地址截断点找不到的问题。
+- 手机号支持 `手机号-分机` 和 `手机号转分机`，导出手机号字段保留完整分机写法。
+- 手机号命中客户档案时，只回填客户账号和业务员，不再用客户名称覆盖订单原文收货人。
+- 货品扫描跳过过短规格编号，避免把业务员代码如 `（T）` 误识别成货品。
+- 不写省份的地址可按常见城市补省份给快递规则使用，例如 `义乌市` 补为 `浙江`；地址原文不改。
+- 前端物流单号栏改为有单号时显示，无单号时隐藏；导出 Excel 的物流单号列仍自动写入。
+- 价格规则保持严格：没有 `元` 或明确公式时，不把裸数字自动当价格，避免误把门牌号、楼栋号、型号数字当金额。
+
+## 2026-05-08 更新记录
+
+今天主要做了前端体验和前端结构重构，目标是让界面继续可维护，而不是继续堆在单个 HTML 文件里。
+
+订单解析相关补充：
+
+- 增加云南城市省份提示，例如 `大理市` 可补省份为 `云南` 给快递规则使用，地址原文不改。
+
+前端界面调整：
+
+- 增加页面背景上传功能，背景图压缩后保存在浏览器本地 `localStorage`，刷新后仍保留。
+- 支持恢复默认背景。
+- 白天和黑夜模式继续共用同一套订单界面。
+- 尝试并收敛 Liquid Glass 风格：卡片、按钮、下拉、弹窗、货品展开面板统一走 `assets/css/liquid-glass.css` 的材质层。
+- 下拉菜单改为磨砂半透明面板，避免背景文字和选项重叠。
+- 货品展开清单改回与订单卡片一致的玻璃材质，不再使用割裂的实体白表格。
+- 顶部按钮、发送按钮、删除按钮、设置按钮、下载按钮统一为玻璃控件风格。
+
+前端结构重构：
+
+- `order-assistant-full.html` 从 3000 多行单文件降为页面骨架。
+- 原内联 CSS 拆到 `assets/styles.css`。
+- Liquid Glass 最终覆盖层拆到 `assets/css/liquid-glass.css`，后续调玻璃效果优先改这里。
+- 原内联 JS 拆成：
+  - `assets/js/core.js`
+  - `assets/js/components.js`
+  - `assets/js/interactions.js`
+  - `assets/js/api-orders.js`
+  - `assets/js/export.js`
+  - `assets/js/render.js`
+  - `assets/js/settings.js`
+  - `assets/js/boot.js`
+
+验证：
+
+- 所有 `assets/js/*.js` 通过 `node --check`。
+- `assets/styles.css` 和 `assets/css/liquid-glass.css` 大括号数量检查通过。
