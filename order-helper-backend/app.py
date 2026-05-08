@@ -97,6 +97,35 @@ def get_candidate_products(text, data_loader, limit=50):
     fallback = [str(x) for x in data_loader.all_products[:50] if str(x) not in seen]
     return unique_candidates[:limit] + fallback
 
+
+NOTE_MARKER_RE = re.compile(r'(客服备注|客户备注|(?<![客服客户])备注)[：:]')
+
+
+def _find_note_marker(text):
+    return NOTE_MARKER_RE.search(text or "")
+
+
+def _split_order_notes(text):
+    matches = list(NOTE_MARKER_RE.finditer(text or ""))
+    service_note = ""
+    customer_note = ""
+    explicit_note_seen = any(m.group(1) in {"客服备注", "客户备注"} for m in matches)
+    for idx, match in enumerate(matches):
+        next_start = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
+        tracking_match = re.search(r'单号录[:：]', text[match.end():next_start])
+        if tracking_match:
+            next_start = match.end() + tracking_match.start()
+        content = text[match.end():next_start].strip(" ，,。;；\n\t")
+        label = match.group(1)
+        if label == "客服备注":
+            service_note = content
+        elif label == "客户备注":
+            customer_note = content
+        elif not explicit_note_seen:
+            service_note = content
+    return service_note, customer_note
+
+
 def local_pre_parse(text, data_loader):
     """
     🌟 本地预解析：识别手机、已知客户、完全匹配的货品（规格编号）
@@ -135,18 +164,16 @@ def local_pre_parse(text, data_loader):
 
     # 2. 扫描货品 (完全匹配规格编号)
     # 【关键】对商品的扫描必须限制在「备注：」之前，并且要剔除「单号录：」的内容，防止单号中的字符误匹配货品
-    tracking_match = re.search(r'单号录[:：\s]*([A-Z0-9\-]+)', text)
+    tracking_match = re.search(r'单号录[:：\s]*([A-Za-z0-9\-]+)', text)
     product_scan_text = text
     if tracking_match:
         # 暂时挖掉单号部分，防止干扰
         product_scan_text = text.replace(tracking_match.group(0), " [单号已占位] ")
 
-    note_match = re.search(r'备注：|备注:', product_scan_text)
+    note_match = _find_note_marker(product_scan_text)
     if note_match:
         product_scan_text = product_scan_text[:note_match.start()]
-        found["note"] = text[note_match.end():].strip()
-    else:
-        found["note"] = ""
+    found["note"], found["customer_note"] = _split_order_notes(text)
 
     text_upper = product_scan_text.upper()
     normalized_text = normalize_key(product_scan_text)
@@ -186,15 +213,21 @@ def local_pre_parse(text, data_loader):
         prod_name = str(prod_name).strip()
         if not prod_name or prod_name == 'nan' or prod_name in seen_products:
             continue
-        start = product_scan_text.find(prod_name)
+        normalized_prod_name = normalize_key(prod_name)
+        if not normalized_prod_name or len(normalized_prod_name) < 3:
+            continue
+        start = normalized_text.find(normalized_prod_name)
         if start < 0:
             continue
-        end = start + len(prod_name)
+        end = start + len(normalized_prod_name)
         if any(not (end <= s or start >= e) for s, e in occupied_spans):
             continue
-        suffix = product_scan_text[end:end + 12]
         qty = 1
-        qty_match = re.search(r'^\s*(?:[*xX×]\s*)?(\d+)\s*(?:台|个|卷|套|箱|包|张|件)?', suffix)
+        qty_match = re.search(
+            rf'{make_loose_literal_pattern(prod_name)}\s*(?:[*xX×]\s*)?(\d+)\s*(?:台|个|卷|套|箱|包|张|件)?',
+            product_scan_text,
+            re.IGNORECASE
+        )
         if qty_match:
             qty = int(qty_match.group(1))
         found["products"].append({"raw_name": prod_name, "qty": qty, "_pos": start})
@@ -254,7 +287,7 @@ def _extract_customer_from_text(text, data_loader):
     account = ""
     salesman_code = ""
 
-    match = re.search(r'(?:系统录[入制]?|系统记录)[:：\s]*([\s\S]*?)(?:备注[:：]|单号录[:：]|$)', text)
+    match = re.search(r'(?:系统录[入制]?|系统记录)[:：\s]*([\s\S]*?)(?:客服备注[:：]|客户备注[:：]|(?<![客服客户])备注[:：]|单号录[:：]|$)', text)
     if match:
         segment = re.sub(r'\s+', ' ', match.group(1)).strip(" ，,。;；")
         segment = re.sub(r'\s{2,}.*$', '', segment).strip()
@@ -282,7 +315,7 @@ def _extract_receiver_address(text, local_info):
     base_phone = base_phone_match.group(0) if base_phone_match else phone
     product_start = local_info.get("product_start", -1)
     cut_points = [p for p in [product_start] if isinstance(p, int) and p > 0]
-    for marker in ["已付", "未付", "系统录", "备注:", "备注：", "单号录"]:
+    for marker in ["已付", "未付", "系统录", "客服备注:", "客服备注：", "客户备注:", "客户备注：", "备注:", "备注：", "单号录"]:
         pos = text.find(marker)
         if pos > 0:
             cut_points.append(pos)
@@ -829,8 +862,8 @@ def process_order_text(raw_text, progress=None):
     ai_freight_from_products = 0.0
     freight_pattern = re.compile(r'(?:补\s*)?运费|邮费|快递费|运费补差')
     
-    # 【规则】备注区货品过滤：备注:之后的文字不算货品，只进客服备注
-    _note_m = re.search('备注：|备注:', raw_text)
+    # 【规则】备注区货品过滤：备注标记之后的文字不算货品，只进备注字段
+    _note_m = _find_note_marker(raw_text)
     _note_text   = normalize_key(raw_text[_note_m.start():]) if _note_m else ""
     _prod_text   = normalize_key(raw_text[:_note_m.start()]) if _note_m else normalize_key(raw_text)
 

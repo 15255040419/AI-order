@@ -147,6 +147,7 @@
                     express: '',
                     trackingNumber: '',
                     note: '',
+                    customerNote: '',
                     progressText: '订单已进入解析队列',
                     progressStep: 'queued',
                 };

@@ -4,6 +4,41 @@ from core.mapping import find_receipt_account
 
 logger = logging.getLogger(__name__)
 
+
+def _extract_notes(raw_text):
+    """Split service/customer notes without carrying product summaries into remarks."""
+    matches = []
+    for match in re.finditer(r'(客服备注|客户备注|(?<![客服客户])备注)[：:]', raw_text):
+        label = match.group(1)
+        kind = "service" if label == "客服备注" else "customer" if label == "客户备注" else "generic"
+        matches.append((match.start(), match.end(), kind))
+
+    if not matches:
+        return "", ""
+
+    matches.sort(key=lambda item: item[0])
+    service_note = ""
+    customer_note = ""
+    explicit_note_seen = any(kind in {"service", "customer"} for _, _, kind in matches)
+
+    for idx, (start, end, kind) in enumerate(matches):
+        next_start = matches[idx + 1][0] if idx + 1 < len(matches) else len(raw_text)
+        tracking_match = re.search(r'单号录[:：]', raw_text[end:next_start])
+        if tracking_match:
+            next_start = end + tracking_match.start()
+        content = raw_text[end:next_start].strip(" ，,。;；\n\t")
+        if not content:
+            continue
+        if kind == "service":
+            service_note = content
+        elif kind == "customer":
+            customer_note = content
+        elif not explicit_note_seen:
+            service_note = content
+
+    return service_note, customer_note
+
+
 def ProcessOrderResult(ai_res, raw_text, processed_products, config_data):
     """
     100% 还原老项目逻辑的处理器
@@ -57,29 +92,12 @@ def ProcessOrderResult(ai_res, raw_text, processed_products, config_data):
             # 终极兜底：所有货品（单价 * 数量）之和
             total_amount = sum(float(p.get('price', 0)) * int(p.get('qty', 1)) for p in processed_products)
 
-    # 4. 【核心改进】备注合成逻辑 (对齐老项目：原文截取 + 备注字样)
-    # 老项目逻辑：直接使用 processed_products 里的 searchName (这是从原文中直接拎出来的带属性的名字)
-    prod_summaries = []
-    for p in processed_products:
-        # searchName 存的是 AI 提取出并在原文中定位到的原始文本 (如 "JY-335C黑色")
-        s_name = str(p.get('searchName', '')).strip()
-        qty = p.get('qty', 1)
-        # 如果原文名结尾已经带了数量（例如 "XP-246B*12" 或 "XP-246B 12个"），先把结尾的数量部分去掉，防止变成 *12*12
-        clean_name = re.sub(rf'[\*xX×\s]*{qty}\s*(?:台|个|卷|套|箱|包|张|件)?$', '', s_name).strip()
-        prod_summaries.append(f"{clean_name}*{qty}")
-    
-    prod_summary_text = "+".join(prod_summaries)
-    
-    # 提取“备注：”之后的内容 (原样保留)
-    remark_match = re.search(r'备注[：:](.*)', raw_text)
-    manual_remark = remark_match.group(1).strip() if remark_match else ""
-    
-    # 最终客服备注 = 货品原始摘要 + 备注文字
-    final_note = f"{prod_summary_text} {manual_remark}".strip()
+    # 4. 备注切分：客服备注、客户备注各自入字段；货品信息不再写入任何备注。
+    final_note, customer_note = _extract_notes(raw_text)
 
     # 5. 【新需求】物流单号提取 (单号录：JT...)
     tracking_number = ""
-    tracking_match = re.search(r'单号录[:：\s]*([A-Z0-9\-]+)', raw_text)
+    tracking_match = re.search(r'单号录[:：\s]*([A-Za-z0-9\-]+)', raw_text)
     if tracking_match:
         tracking_number = tracking_match.group(1).strip()
 
@@ -88,7 +106,8 @@ def ProcessOrderResult(ai_res, raw_text, processed_products, config_data):
     print(f"| 客户账号: {customer_account}")
     print(f"| 业务员: {salesman} ({actual_code})")
     print(f"| 收款额: {total_amount} 元")
-    print(f"| 最终备注: {final_note}")
+    print(f"| 客服备注: {final_note}")
+    print(f"| 客户备注: {customer_note}")
     print(f"| 物流单号: {tracking_number}")
     print("-" * 30)
 
@@ -105,5 +124,6 @@ def ProcessOrderResult(ai_res, raw_text, processed_products, config_data):
         "total": total_amount,
         "freight": 0,
         "note": final_note,
+        "customerNote": customer_note,
         "trackingNumber": tracking_number
     }

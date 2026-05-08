@@ -278,10 +278,16 @@
                             ` : ''}
                         </div>
 
-                        <!-- 第五排：备注 (单独一行，自动换行) -->
-                        <div class="space-y-0.5">
-                             <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">客服备注</label>
-                             <textarea onchange="updateOrder(${order.id}, 'note', this.value)" class="note-textarea w-full text-[13px] px-3 border border-gray-200 rounded-lg bg-blue-50/50 text-blue-800 font-bold focus:outline-none resize-none overflow-hidden" oninput="autoResizeNote(this)">${order.note || ''}</textarea>
+                        <!-- 第五排：客服备注 / 客户备注 -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div class="space-y-0.5">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">客服备注</label>
+                                <textarea onchange="updateOrder(${order.id}, 'note', this.value)" class="note-textarea w-full text-[13px] px-3 border border-gray-200 rounded-lg bg-blue-50/50 text-blue-800 font-bold focus:outline-none resize-none overflow-hidden" oninput="autoResizeNote(this)">${order.note || ''}</textarea>
+                            </div>
+                            <div class="space-y-0.5">
+                                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">客户备注</label>
+                                <textarea onchange="updateOrder(${order.id}, 'customerNote', this.value)" class="note-textarea w-full text-[13px] px-3 border border-gray-200 rounded-lg bg-blue-50/50 text-blue-800 font-bold focus:outline-none resize-none overflow-hidden" oninput="autoResizeNote(this)">${order.customerNote || ''}</textarea>
+                            </div>
                         </div>
 
                         ${order.products && order.products.length > 0 ? `

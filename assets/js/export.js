@@ -6,7 +6,7 @@
             }
 
             const wb = XLSX.utils.book_new();
-            const orderRows = [['导入编号', '收货人', '手机', '收货地址', '收货人信息(解析)', '应收邮资', '应收合计', '客服备注', '客户账号', '销售渠道名称', '结算方式', '物流公司', '物流单号', '支付单号', '收款账户', '业务员']];
+            const orderRows = [['导入编号', '收货人', '手机', '收货地址', '收货人信息(解析)', '应收邮资', '应收合计', '客服备注', '客户备注', '客户账号', '销售渠道名称', '结算方式', '物流公司', '物流单号', '支付单号', '收款账户', '业务员']];
             const prodRows = [['导入编号(关联订单)', '货品名称', '条码', '货品编号', '规格', '数量', '单价']];
 
             appState.orders.forEach((r, idx) => {
@@ -14,7 +14,7 @@
                 orderRows.push([
                     importId, r.receiver, r.phone, r.address,
                     `${r.receiver} ${r.phone} ${r.address}`,
-                    r.freight || 0, r.total || 0, r.note || '',
+                    r.freight || 0, r.total || 0, r.note || '', r.customerNote || '',
                     r.account || '', r.salesChannel || '仝心科技线下批发',
                     r.payMethod || '欠款计应收', r.express || '',
                     r.trackingNumber || '', '', // 物流单号, 支付单号
